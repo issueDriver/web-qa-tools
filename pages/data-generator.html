@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试数据生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #e0f2f7 0%, #d4e8f0 50%, #c8e0ea 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #4a90e2;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        input[type="number"] {
+            width: 100px;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background: #3a7bc8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .result {
+            background: #f5f7fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result-item {
+            margin-bottom: 15px;
+        }
+
+        .result-label {
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            color: #333;
+            font-size: 1em;
+            background: white;
+            padding: 12px;
+            border-radius: 4px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-line;
+            line-height: 1.8;
+        }
+
+        .input-row span {
+            color: #666;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">← 返回首页</a>
+        <div class="header">
+            <h1>🎲 测试数据生成器</h1>
+        </div>
+
+        <form id="generatorForm">
+            <div class="form-group">
+                <label for="dataTypeSelect">数据类型</label>
+                <select id="dataTypeSelect">
+                    <option value="">请选择数据类型</option>
+                    <option value="name">姓名</option>
+                    <option value="idCard">身份证号</option>
+                    <option value="phone">手机号</option>
+                    <option value="product">商品名称</option>
+                    <option value="coupon">优惠券名称</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dataCount">生成数量</label>
+                <div class="input-row">
+                    <input type="number" id="dataCount" value="10" min="1" max="100" placeholder="数量">
+                    <span>条</span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn">生成数据</button>
+            <button type="button" class="btn btn-secondary" onclick="copyAll()">复制全部</button>
+        </form>
+
+        <div id="result" class="result">
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const surnames = ['王', '李', '张', '刘', '陈', '杨', '赵', '黄', '周', '吴', '徐', '孙', '胡', '朱', '高', '林', '何', '郭', '马', '罗', '梁', '宋', '郑', '谢', '韩', '唐', '冯', '于', '董', '萧', '程', '曹', '袁', '邓', '许', '傅', '沈', '曾', '彭', '吕', '苏', '卢', '蒋', '蔡', '贾', '丁', '魏', '薛', '叶', '阎'];
+        const givenNames = ['伟', '芳', '娜', '秀英', '敏', '静', '丽', '强', '磊', '军', '洋', '勇', '艳', '杰', '娟', '涛', '明', '超', '秀兰', '霞', '平', '刚', '桂英', '建华', '文', '华', '建国', '红', '志强', '秀', '桂兰', '桂芳', '桂香', '桂华', '桂珍', '桂英', '桂荣', '桂芝', '桂芬', '桂芳', '桂香', '桂华', '桂珍', '桂英', '桂荣', '桂芝', '桂芬'];
+        // 燃气配件名称
+        const gasFittings = ['燃气软管', '燃气阀门', '燃气表', '燃气灶具', '燃气热水器', '燃气管道', '燃气接头', '燃气减压阀', '燃气报警器', '燃气过滤器', '燃气球阀', '燃气截止阀', '燃气三通', '燃气弯头', '燃气直通', '燃气活接', '燃气卡套', '燃气波纹管', '燃气不锈钢管', '燃气铜管'];
+        
+        // 液化气名称
+        const liquefiedGas = ['液化石油气', 'LPG液化气', '瓶装液化气', '罐装液化气', '工业液化气', '民用液化气', '车用液化气', '液化天然气', 'LNG液化气', '压缩天然气', 'CNG液化气'];
+        const couponTypes = ['满减券', '折扣券', '免邮券', '新人券', '生日券', '会员券', '节日券', '限时券', '秒杀券', '团购券', '拼团券', '分享券', '签到券', '积分券', '兑换券', '体验券', '试用券', '专享券', 'VIP券', '升级券'];
+
+        function generateName() {
+            const surname = surnames[Math.floor(Math.random() * surnames.length)];
+            const givenName = givenNames[Math.floor(Math.random() * givenNames.length)];
+            return surname + givenName;
+        }
+
+        function generateIdCard() {
+            // 生成18位身份证号
+            // 地区码（6位）：省市区代码
+            const areas = ['110000', '120000', '130000', '140000', '150000', '210000', '220000', '230000', '310000', '320000', '330000', '340000', '350000', '360000', '370000', '410000', '420000', '430000', '440000', '450000', '460000', '500000', '510000', '520000', '530000', '540000', '610000', '620000', '630000', '640000', '650000'];
+            const area = areas[Math.floor(Math.random() * areas.length)];
+            
+            // 出生日期（8位）：YYYYMMDD
+            const year = String(1970 + Math.floor(Math.random() * 50));
+            const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
+            const day = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
+            const birthDate = year + month + day;
+            
+            // 顺序码（3位）
+            const sequence = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
+            
+            // 前17位：地区码(6) + 出生日期(8) + 顺序码(3) = 17位
+            const id17 = area + birthDate + sequence;
+            
+            // 计算校验码（第18位）
+            const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+            const checkCodes = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+            let sum = 0;
+            for (let i = 0; i < 17; i++) {
+                sum += parseInt(id17[i]) * weights[i];
+            }
+            const checkCode = checkCodes[sum % 11];
+            
+            return id17 + checkCode;
+        }
+
+        function generatePhone() {
+            const prefixes = ['130', '131', '132', '133', '134', '135', '136', '137', '138', '139', '150', '151', '152', '153', '155', '156', '157', '158', '159', '180', '181', '182', '183', '184', '185', '186', '187', '188', '189'];
+            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+            const suffix = String(Math.floor(Math.random() * 100000000)).padStart(8, '0');
+            return prefix + suffix;
+        }
+
+        function generateProduct() {
+            // 随机选择燃气配件或液化气
+            const isFitting = Math.random() > 0.5;
+            if (isFitting) {
+                return gasFittings[Math.floor(Math.random() * gasFittings.length)];
+            } else {
+                return liquefiedGas[Math.floor(Math.random() * liquefiedGas.length)];
+            }
+        }
+
+        function generateCoupon() {
+            const type = couponTypes[Math.floor(Math.random() * couponTypes.length)];
+            const amount = Math.floor(Math.random() * 500) + 10;
+            return type + ' - 满' + amount + '减' + Math.floor(amount * 0.1);
+        }
+
+        document.getElementById('generatorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            generateData();
+        });
+
+        function generateData() {
+            const dataType = document.getElementById('dataTypeSelect').value;
+            const count = parseInt(document.getElementById('dataCount').value) || 10;
+
+            if (!dataType) {
+                alert('请选择数据类型');
+                return;
+            }
+
+            if (count < 1 || count > 100) {
+                alert('生成数量必须在1-100之间');
+                return;
+            }
+
+            let label = '';
+            let data = [];
+
+            switch(dataType) {
+                case 'name':
+                    label = '姓名';
+                    for (let i = 0; i < count; i++) {
+                        data.push(generateName());
+                    }
+                    break;
+                case 'idCard':
+                    label = '身份证号';
+                    for (let i = 0; i < count; i++) {
+                        data.push(generateIdCard());
+                    }
+                    break;
+                case 'phone':
+                    label = '手机号';
+                    for (let i = 0; i < count; i++) {
+                        data.push(generatePhone());
+                    }
+                    break;
+                case 'product':
+                    label = '商品名称';
+                    for (let i = 0; i < count; i++) {
+                        data.push(generateProduct());
+                    }
+                    break;
+                case 'coupon':
+                    label = '优惠券名称';
+                    for (let i = 0; i < count; i++) {
+                        data.push(generateCoupon());
+                    }
+                    break;
+            }
+
+            // 生成结果HTML
+            let html = `<div class="result-item">
+                <div class="result-label">${label}：</div>
+                <div class="result-value">${data.join('\n')}</div>
+            </div>`;
+
+            document.getElementById('resultContent').innerHTML = html;
+            document.getElementById('result').style.display = 'block';
+        }
+
+        function copyAll() {
+            const resultDiv = document.getElementById('result');
+            if (resultDiv.style.display === 'none') {
+                alert('请先生成数据');
+                return;
+            }
+
+            let text = '';
+            const resultItems = resultDiv.querySelectorAll('.result-item');
+            resultItems.forEach(item => {
+                const label = item.querySelector('.result-label').textContent;
+                const value = item.querySelector('.result-value').textContent;
+                text += label + '\n' + value + '\n\n';
+            });
+
+            navigator.clipboard.writeText(text).then(() => {
+                alert('已复制到剪贴板');
+            }).catch(() => {
+                alert('复制失败，请手动复制');
+            });
+        }
+    </script>
+</body>
+</html>
+

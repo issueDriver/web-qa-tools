@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地图经纬度工具</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #e0f2f7 0%, #d4e8f0 50%, #c8e0ea 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #4a90e2;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel-section {
+            background: #f5f7fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.9em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #3a7bc8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .coordinate-display {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+
+        .coordinate-item {
+            margin-bottom: 8px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .coordinate-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .coordinate-value {
+            color: #333;
+            font-weight: bold;
+        }
+
+        .map-container {
+            height: 600px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #e0e0e0;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 15px;
+        }
+
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .history-item {
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.85em;
+        }
+
+        .history-item:hover {
+            background: #e9ecef;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            .map-container {
+                height: 400px;
+            }
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">← 返回首页</a>
+        <div class="header">
+            <h1>🗺️ 地图经纬度工具</h1>
+        </div>
+
+        <div class="main-content">
+            <div class="control-panel">
+                <!-- 坐标采集 -->
+                <div class="panel-section">
+                    <div class="section-title">📍 坐标采集</div>
+                    <div class="form-group">
+                        <label>点击地图获取坐标</label>
+                        <div class="coordinate-display" id="currentCoordinate">
+                            <div class="coordinate-item">
+                                <div class="coordinate-label">经度 (Lng)</div>
+                                <div class="coordinate-value" id="currentLng">--</div>
+                            </div>
+                            <div class="coordinate-item">
+                                <div class="coordinate-label">纬度 (Lat)</div>
+                                <div class="coordinate-value" id="currentLat">--</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="copyCurrentCoordinate()">复制当前坐标</button>
+                </div>
+
+                <!-- 坐标定位 -->
+                <div class="panel-section">
+                    <div class="section-title">🔍 坐标定位</div>
+                    <div class="form-group">
+                        <label>经度 (Lng)</label>
+                        <input type="number" id="inputLng" placeholder="例如：116.397428" step="0.000001">
+                    </div>
+                    <div class="form-group">
+                        <label>纬度 (Lat)</label>
+                        <input type="number" id="inputLat" placeholder="例如：39.90923" step="0.000001">
+                    </div>
+                    <button class="btn" onclick="locateCoordinate()">定位到地图</button>
+                </div>
+
+                <!-- 地址转经纬度 -->
+                <div class="panel-section">
+                    <div class="section-title">📍 地址转经纬度</div>
+                    <div class="form-group">
+                        <label>地址</label>
+                        <input type="text" id="inputAddress" placeholder="例如：北京市天安门广场" onkeypress="if(event.key==='Enter') geocodeAddress()">
+                    </div>
+                    <button class="btn" onclick="geocodeAddress()" id="geocodeBtn">查询地址</button>
+                    <div class="coordinate-display" id="geocodeResult" style="display: none; margin-top: 10px;">
+                        <div class="coordinate-item">
+                            <div class="coordinate-label">经度 (Lng)</div>
+                            <div class="coordinate-value" id="geocodeLng">--</div>
+                        </div>
+                        <div class="coordinate-item">
+                            <div class="coordinate-label">纬度 (Lat)</div>
+                            <div class="coordinate-value" id="geocodeLat">--</div>
+                        </div>
+                        <div class="coordinate-item" id="geocodeAddressDisplay" style="display: none;">
+                            <div class="coordinate-label">详细地址</div>
+                            <div class="coordinate-value" id="geocodeAddressText" style="font-size: 0.85em; font-weight: normal;"></div>
+                        </div>
+                    </div>
+                    <div id="geocodeLoading" style="display: none; text-align: center; color: #4a90e2; margin-top: 10px; padding: 10px;">
+                        <div style="display: inline-block; width: 16px; height: 16px; border: 2px solid #4a90e2; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px;"></div>
+                        正在查询地址...
+                    </div>
+                </div>
+
+                <!-- 坐标系转换 -->
+                <div class="panel-section">
+                    <div class="section-title">🔄 坐标系转换</div>
+                    <div class="form-group">
+                        <label>源坐标系</label>
+                        <select id="sourceSystem">
+                            <option value="WGS84">WGS84 (GPS坐标)</option>
+                            <option value="GCJ02" selected>GCJ02 (火星坐标/高德)</option>
+                            <option value="BD09">BD09 (百度坐标)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>目标坐标系</label>
+                        <select id="targetSystem">
+                            <option value="WGS84">WGS84 (GPS坐标)</option>
+                            <option value="GCJ02">GCJ02 (火星坐标/高德)</option>
+                            <option value="BD09" selected>BD09 (百度坐标)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>经度</label>
+                        <input type="number" id="convertLng" placeholder="输入经度" step="0.000001">
+                    </div>
+                    <div class="form-group">
+                        <label>纬度</label>
+                        <input type="number" id="convertLat" placeholder="输入纬度" step="0.000001">
+                    </div>
+                    <button class="btn" onclick="convertCoordinate()">转换坐标</button>
+                    <div class="coordinate-display" id="convertResult" style="display: none;">
+                        <div class="coordinate-item">
+                            <div class="coordinate-label">转换后经度</div>
+                            <div class="coordinate-value" id="convertedLng">--</div>
+                        </div>
+                        <div class="coordinate-item">
+                            <div class="coordinate-label">转换后纬度</div>
+                            <div class="coordinate-value" id="convertedLat">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 历史记录 -->
+                <div class="panel-section">
+                    <div class="section-title">📋 历史记录</div>
+                    <button class="btn btn-secondary" onclick="clearHistory()">清空历史</button>
+                    <div class="history-list" id="historyList"></div>
+                </div>
+
+                <div class="info-box">
+                    <strong>使用说明：</strong><br>
+                    • 点击地图上的任意位置获取坐标<br>
+                    • 输入坐标可定位到地图上<br>
+                    • 输入地址可转换为经纬度并定位<br>
+                    • 支持WGS84、GCJ02、BD09坐标系转换<br>
+                    • 坐标会自动保存到历史记录<br>
+                    • 地址查询使用Nominatim API（有频率限制）
+                </div>
+            </div>
+
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let map;
+        let marker;
+        let history = JSON.parse(localStorage.getItem('coordinateHistory') || '[]');
+
+        // 初始化地图
+        function initMap() {
+            // 默认定位到北京
+            map = L.map('map').setView([39.90923, 116.397428], 13);
+
+            // 添加OpenStreetMap图层
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // 添加点击事件
+            map.on('click', function(e) {
+                const lat = e.latlng.lat;
+                const lng = e.latlng.lng;
+                updateCurrentCoordinate(lat, lng);
+                addMarker(lat, lng);
+                addToHistory(lat, lng);
+            });
+
+            // 加载历史记录
+            renderHistory();
+        }
+
+        // 更新当前坐标显示
+        function updateCurrentCoordinate(lat, lng) {
+            document.getElementById('currentLat').textContent = lat.toFixed(6);
+            document.getElementById('currentLng').textContent = lng.toFixed(6);
+        }
+
+        // 添加标记
+        function addMarker(lat, lng) {
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            marker = L.marker([lat, lng]).addTo(map);
+            marker.bindPopup(`坐标：${lng.toFixed(6)}, ${lat.toFixed(6)}`).openPopup();
+        }
+
+        // 定位到指定坐标
+        function locateCoordinate() {
+            const lng = parseFloat(document.getElementById('inputLng').value);
+            const lat = parseFloat(document.getElementById('inputLat').value);
+
+            if (isNaN(lng) || isNaN(lat)) {
+                alert('请输入有效的经纬度');
+                return;
+            }
+
+            if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+                alert('经纬度超出有效范围\n经度：-180 到 180\n纬度：-90 到 90');
+                return;
+            }
+
+            map.setView([lat, lng], 15);
+            addMarker(lat, lng);
+            updateCurrentCoordinate(lat, lng);
+            addToHistory(lat, lng);
+        }
+
+        // 复制当前坐标
+        function copyCurrentCoordinate() {
+            const lng = document.getElementById('currentLng').textContent;
+            const lat = document.getElementById('currentLat').textContent;
+
+            if (lng === '--' || lat === '--') {
+                alert('请先点击地图获取坐标');
+                return;
+            }
+
+            const text = `${lng}, ${lat}`;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('已复制到剪贴板：' + text);
+            }).catch(() => {
+                alert('复制失败，请手动复制');
+            });
+        }
+
+        // 坐标系转换算法
+        const PI = Math.PI;
+        const X_PI = PI * 3000.0 / 180.0;
+
+        // GCJ02转WGS84
+        function gcj02ToWgs84(lng, lat) {
+            let dlat = transformLat(lng - 105.0, lat - 35.0);
+            let dlng = transformLng(lng - 105.0, lat - 35.0);
+            let radlat = lat / 180.0 * PI;
+            let magic = Math.sin(radlat);
+            magic = 1 - 0.00669342162296594323 * magic * magic;
+            let sqrtmagic = Math.sqrt(magic);
+            dlat = (dlat * 180.0) / ((6378245.0 * (1 - 0.00669342162296594323)) / (magic * sqrtmagic) * PI);
+            dlng = (dlng * 180.0) / (6378245.0 / sqrtmagic * Math.cos(radlat) * PI);
+            let mglat = lat + dlat;
+            let mglng = lng + dlng;
+            return [lng * 2 - mglng, lat * 2 - mglat];
+        }
+
+        // WGS84转GCJ02
+        function wgs84ToGcj02(lng, lat) {
+            let dlat = transformLat(lng - 105.0, lat - 35.0);
+            let dlng = transformLng(lng - 105.0, lat - 35.0);
+            let radlat = lat / 180.0 * PI;
+            let magic = Math.sin(radlat);
+            magic = 1 - 0.00669342162296594323 * magic * magic;
+            let sqrtmagic = Math.sqrt(magic);
+            dlat = (dlat * 180.0) / ((6378245.0 * (1 - 0.00669342162296594323)) / (magic * sqrtmagic) * PI);
+            dlng = (dlng * 180.0) / (6378245.0 / sqrtmagic * Math.cos(radlat) * PI);
+            return [lng + dlng, lat + dlat];
+        }
+
+        // GCJ02转BD09
+        function gcj02ToBd09(lng, lat) {
+            let z = Math.sqrt(lng * lng + lat * lat) + 0.00002 * Math.sin(lat * X_PI);
+            let theta = Math.atan2(lat, lng) + 0.000003 * Math.cos(lng * X_PI);
+            return [z * Math.cos(theta) + 0.0065, z * Math.sin(theta) + 0.006];
+        }
+
+        // BD09转GCJ02
+        function bd09ToGcj02(lng, lat) {
+            let x = lng - 0.0065;
+            let y = lat - 0.006;
+            let z = Math.sqrt(x * x + y * y) - 0.00002 * Math.sin(y * X_PI);
+            let theta = Math.atan2(y, x) - 0.000003 * Math.cos(x * X_PI);
+            return [z * Math.cos(theta), z * Math.sin(theta)];
+        }
+
+        // WGS84转BD09
+        function wgs84ToBd09(lng, lat) {
+            const gcj02 = wgs84ToGcj02(lng, lat);
+            return gcj02ToBd09(gcj02[0], gcj02[1]);
+        }
+
+        // BD09转WGS84
+        function bd09ToWgs84(lng, lat) {
+            const gcj02 = bd09ToGcj02(lng, lat);
+            return gcj02ToWgs84(gcj02[0], gcj02[1]);
+        }
+
+        function transformLat(lng, lat) {
+            let ret = -100.0 + 2.0 * lng + 3.0 * lat + 0.2 * lat * lat + 0.1 * lng * lat + 0.2 * Math.sqrt(Math.abs(lng));
+            ret += (20.0 * Math.sin(6.0 * lng * PI) + 20.0 * Math.sin(2.0 * lng * PI)) * 2.0 / 3.0;
+            ret += (20.0 * Math.sin(lat * PI) + 40.0 * Math.sin(lat / 3.0 * PI)) * 2.0 / 3.0;
+            ret += (160.0 * Math.sin(lat / 12.0 * PI) + 320 * Math.sin(lat * PI / 30.0)) * 2.0 / 3.0;
+            return ret;
+        }
+
+        function transformLng(lng, lat) {
+            let ret = 300.0 + lng + 2.0 * lat + 0.1 * lng * lng + 0.1 * lng * lat + 0.1 * Math.sqrt(Math.abs(lng));
+            ret += (20.0 * Math.sin(6.0 * lng * PI) + 20.0 * Math.sin(2.0 * lng * PI)) * 2.0 / 3.0;
+            ret += (20.0 * Math.sin(lng * PI) + 40.0 * Math.sin(lng / 3.0 * PI)) * 2.0 / 3.0;
+            ret += (150.0 * Math.sin(lng / 12.0 * PI) + 300.0 * Math.sin(lng / 30.0 * PI)) * 2.0 / 3.0;
+            return ret;
+        }
+
+        // 坐标转换
+        function convertCoordinate() {
+            const sourceSystem = document.getElementById('sourceSystem').value;
+            const targetSystem = document.getElementById('targetSystem').value;
+            const lng = parseFloat(document.getElementById('convertLng').value);
+            const lat = parseFloat(document.getElementById('convertLat').value);
+
+            if (isNaN(lng) || isNaN(lat)) {
+                alert('请输入有效的经纬度');
+                return;
+            }
+
+            if (sourceSystem === targetSystem) {
+                alert('源坐标系和目标坐标系相同，无需转换');
+                return;
+            }
+
+            let result = [lng, lat];
+
+            // 先转换为WGS84
+            if (sourceSystem === 'GCJ02') {
+                result = gcj02ToWgs84(lng, lat);
+            } else if (sourceSystem === 'BD09') {
+                result = bd09ToWgs84(lng, lat);
+            }
+
+            // 再从WGS84转换为目标坐标系
+            if (targetSystem === 'GCJ02') {
+                result = wgs84ToGcj02(result[0], result[1]);
+            } else if (targetSystem === 'BD09') {
+                result = wgs84ToBd09(result[0], result[1]);
+            }
+
+            document.getElementById('convertedLng').textContent = result[0].toFixed(6);
+            document.getElementById('convertedLat').textContent = result[1].toFixed(6);
+            document.getElementById('convertResult').style.display = 'block';
+        }
+
+        // 添加到历史记录
+        function addToHistory(lat, lng) {
+            const item = {
+                lat: lat.toFixed(6),
+                lng: lng.toFixed(6),
+                time: new Date().toLocaleString('zh-CN')
+            };
+            history.unshift(item);
+            if (history.length > 50) {
+                history = history.slice(0, 50);
+            }
+            localStorage.setItem('coordinateHistory', JSON.stringify(history));
+            renderHistory();
+        }
+
+        // 渲染历史记录
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            if (history.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">暂无历史记录</div>';
+                return;
+            }
+
+            list.innerHTML = history.map((item, index) => {
+                return `<div class="history-item" onclick="useHistory(${index})">
+                    <div style="font-weight: bold; margin-bottom: 3px;">${item.lng}, ${item.lat}</div>
+                    <div style="font-size: 0.8em; color: #999;">${item.time}</div>
+                </div>`;
+            }).join('');
+        }
+
+        // 使用历史记录
+        function useHistory(index) {
+            const item = history[index];
+            document.getElementById('inputLng').value = item.lng;
+            document.getElementById('inputLat').value = item.lat;
+            locateCoordinate();
+        }
+
+        // 清空历史记录
+        function clearHistory() {
+            if (confirm('确定要清空所有历史记录吗？')) {
+                history = [];
+                localStorage.setItem('coordinateHistory', JSON.stringify(history));
+                renderHistory();
+            }
+        }
+
+        // 地址转经纬度（地理编码）
+        async function geocodeAddress() {
+            const address = document.getElementById('inputAddress').value.trim();
+            
+            if (!address) {
+                alert('请输入地址');
+                return;
+            }
+
+            const btn = document.getElementById('geocodeBtn');
+            const loading = document.getElementById('geocodeLoading');
+            const result = document.getElementById('geocodeResult');
+            
+            // 显示加载状态
+            btn.disabled = true;
+            btn.textContent = '查询中...';
+            loading.style.display = 'block';
+            result.style.display = 'none';
+
+            try {
+                // 使用Nominatim API进行地理编码
+                // 注意：Nominatim有使用限制，请合理使用
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&addressdetails=1`;
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'User-Agent': 'MapCoordinateTool/1.0' // Nominatim要求设置User-Agent
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('网络请求失败');
+                }
+
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    alert('未找到该地址，请尝试更详细的地址描述');
+                    btn.disabled = false;
+                    btn.textContent = '查询地址';
+                    loading.style.display = 'none';
+                    return;
+                }
+
+                const result_data = data[0];
+                const lat = parseFloat(result_data.lat);
+                const lng = parseFloat(result_data.lon);
+                const displayName = result_data.display_name || address;
+
+                // 显示结果
+                document.getElementById('geocodeLng').textContent = lng.toFixed(6);
+                document.getElementById('geocodeLat').textContent = lat.toFixed(6);
+                document.getElementById('geocodeAddressText').textContent = displayName;
+                document.getElementById('geocodeAddressDisplay').style.display = 'block';
+                result.style.display = 'block';
+
+                // 定位到地图
+                map.setView([lat, lng], 15);
+                addMarker(lat, lng);
+                updateCurrentCoordinate(lat, lng);
+                addToHistory(lat, lng);
+
+                // 自动填充到坐标定位输入框
+                document.getElementById('inputLng').value = lng.toFixed(6);
+                document.getElementById('inputLat').value = lat.toFixed(6);
+
+            } catch (error) {
+                console.error('地理编码错误:', error);
+                alert('查询失败，请检查网络连接或稍后重试\n\n提示：Nominatim API有使用频率限制，请勿频繁请求');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '查询地址';
+                loading.style.display = 'none';
+            }
+        }
+
+        // 初始化
+        initMap();
+    </script>
+</body>
+</html>
+

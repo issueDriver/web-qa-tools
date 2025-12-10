@@ -1,0 +1,22 @@
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+*.temp
+
+# 部署相关（可选，根据实际情况决定是否忽略）
+# nginx.conf
+# docker-compose.override.yml
+

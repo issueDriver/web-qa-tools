@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扩展工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #e0f2f7 0%, #d4e8f0 50%, #c8e0ea 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #4a90e2;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .coming-soon {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .coming-soon-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+        }
+
+        .coming-soon-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .coming-soon-desc {
+            font-size: 1em;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .tools-list {
+            text-align: left;
+            background: #f5f7fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .tools-list h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .tools-list ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .tools-list li {
+            padding: 8px 0;
+            color: #666;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .tools-list li:last-child {
+            border-bottom: none;
+        }
+
+        .tools-list li::before {
+            content: "• ";
+            color: #4a90e2;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">← 返回首页</a>
+        <div class="header">
+            <h1>🔧 扩展工具</h1>
+        </div>
+
+        <div class="coming-soon">
+            <div class="coming-soon-icon">🚧</div>
+            <div class="coming-soon-title">更多工具即将上线</div>
+            <div class="coming-soon-desc">
+                我们正在开发更多实用的工具，敬请期待！
+            </div>
+
+            <div class="tools-list">
+                <h3>计划中的工具：</h3>
+                <ul>
+                    <li>URL编码/解码工具</li>
+                    <li>Base64编码/解码工具</li>
+                    <li>文本统计工具</li>
+                    <li>颜色转换工具</li>
+                    <li>正则表达式测试工具</li>
+                    <li>Markdown编辑器</li>
+                    <li>密码生成器</li>
+                    <li>哈希计算器</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

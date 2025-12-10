@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL拼接工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #e0f2f7 0%, #d4e8f0 50%, #c8e0ea 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #4a90e2;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .url-preview {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #333;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+        }
+
+        .url-preview.empty {
+            color: #999;
+            font-style: italic;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 15px;
+        }
+
+        .btn:hover {
+            background: #3a7bc8;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .btn-group {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .url-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 12px 20px;
+            background: #e7f3ff;
+            border: 2px solid #4a90e2;
+            border-radius: 8px;
+            color: #4a90e2;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            word-break: break-all;
+        }
+
+        .url-link:hover {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .preview-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .preview-section.active {
+            display: block;
+        }
+
+        .mobile-preview {
+            max-width: 414px;
+            margin: 0 auto;
+            background: #f5f5f5;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .video-section {
+            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .video-title {
+            color: white;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .video-logo {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: white;
+            font-size: 0.8em;
+            text-align: right;
+        }
+
+        .video-logo .cneb {
+            color: #ff4444;
+            font-weight: bold;
+        }
+
+        .video-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 0.9em;
+        }
+
+        .info-card {
+            background: #e0f7fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-card-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #00695c;
+            margin-bottom: 15px;
+        }
+
+        .qualified-stamp {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            font-size: 4em;
+            color: rgba(76, 175, 80, 0.3);
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #4caf50;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 0.9em;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #666;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .info-value.green {
+            color: #4caf50;
+        }
+
+        .info-value.blue {
+            color: #2196f3;
+        }
+
+        .warning-card {
+            background: #e0f7fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .inspection-card {
+            background: #e0f7fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            min-height: 100px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            background: #00acc1;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .action-btn:hover {
+            background: #0097a7;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #4a90e2;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .info-box strong {
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .btn-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">← 返回首页</a>
+        <div class="header">
+            <h1>🔗 URL拼接工具</h1>
+        </div>
+
+        <div class="form-group">
+            <label for="baseUrl">基础URL：</label>
+            <input type="text" id="baseUrl" 
+                   value="https://example.com/asset/pub/gasCylinder/trace/queryGasCylinderTraceRecord" 
+                   placeholder="输入基础URL">
+        </div>
+
+        <div class="form-group">
+            <label for="tenantId">tenantId：</label>
+            <input type="text" id="tenantId" value="10001" placeholder="输入tenantId">
+        </div>
+
+        <div class="form-group">
+            <label for="chipCode">chipCode：</label>
+            <input type="text" id="chipCode" value="8B547049" placeholder="输入chipCode">
+        </div>
+
+        <div class="form-group">
+            <label for="cylinderCode">cylinderCode：</label>
+            <input type="text" id="cylinderCode" value="202511260001" placeholder="输入cylinderCode">
+        </div>
+
+        <div class="url-preview empty" id="urlPreview">
+            请输入参数后自动生成URL
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="copyUrl()">复制URL</button>
+            <button class="btn btn-success" onclick="showPreview()" id="previewBtn" disabled>预览页面</button>
+            <button class="btn btn-success" onclick="openUrl()" id="openBtn" disabled>在新窗口打开</button>
+        </div>
+
+        <div class="preview-section" id="previewSection">
+            <div class="mobile-preview">
+                <!-- 视频区域 -->
+                <div class="video-section">
+                    <div class="video-logo">
+                        <div class="cneb">CNEB</div>
+                        <div>中国国家应急广播</div>
+                    </div>
+                    <div class="video-title">瓶装液化石油气的使用安全</div>
+                    <div class="video-controls">
+                        <span>▶</span>
+                        <span>0:00 / 3:48</span>
+                        <span>🔊</span>
+                        <span>⛶</span>
+                        <span>⋯</span>
+                    </div>
+                </div>
+
+                <!-- 内容将通过API动态加载 -->
+                <div style="text-align: center; padding: 40px; color: #999;">
+                    点击"预览页面"按钮加载数据
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>使用说明：</strong><br>
+            1. 修改基础URL（如需要）<br>
+            2. 输入三个参数：tenantId、chipCode、cylinderCode<br>
+            3. URL会自动生成并显示在上方<br>
+            4. 点击"预览页面"可在当前页面查看模拟效果<br>
+            5. 点击"复制URL"可复制到剪贴板<br>
+            6. 点击"在新窗口打开"可在新标签页打开实际页面
+        </div>
+    </div>
+
+    <script>
+        const inputs = ['baseUrl', 'tenantId', 'chipCode', 'cylinderCode'];
+        let currentUrl = '';
+
+        // 监听输入变化，自动生成URL
+        inputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', generateUrl);
+        });
+
+        // 初始化时生成URL
+        generateUrl();
+
+        function generateUrl() {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const tenantId = document.getElementById('tenantId').value.trim();
+            const chipCode = document.getElementById('chipCode').value.trim();
+            const cylinderCode = document.getElementById('cylinderCode').value.trim();
+
+            const preview = document.getElementById('urlPreview');
+            const openBtn = document.getElementById('openBtn');
+
+            if (!baseUrl) {
+                preview.textContent = '请输入基础URL';
+                preview.classList.add('empty');
+                openBtn.disabled = true;
+                document.getElementById('previewBtn').disabled = true;
+                currentUrl = '';
+                return;
+            }
+
+            // 构建参数
+            const params = [];
+            if (tenantId) params.push(`tenantId=${encodeURIComponent(tenantId)}`);
+            if (chipCode) params.push(`chipCode=${encodeURIComponent(chipCode)}`);
+            if (cylinderCode) params.push(`cylinderCode=${encodeURIComponent(cylinderCode)}`);
+
+            if (params.length === 0) {
+                currentUrl = baseUrl;
+            } else {
+                const separator = baseUrl.includes('?') ? '&' : '?';
+                currentUrl = baseUrl + separator + params.join('&');
+            }
+
+            preview.textContent = currentUrl;
+            preview.classList.remove('empty');
+            openBtn.disabled = false;
+            document.getElementById('previewBtn').disabled = false;
+        }
+
+
+        function showPreview() {
+            if (!currentUrl) {
+                alert('请先输入参数生成URL');
+                return;
+            }
+            
+            const previewSection = document.getElementById('previewSection');
+            previewSection.classList.add('active');
+            
+            // 默认显示JSON输入界面（避免CORS错误）
+            showJsonInput();
+            
+            previewSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function tryAutoFetch() {
+            if (!currentUrl) {
+                alert('请先输入参数生成URL');
+                return;
+            }
+            
+            const mobilePreview = document.querySelector('.mobile-preview');
+            mobilePreview.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">正在尝试自动获取数据...</div>';
+            
+            // 使用no-cors模式尝试，但这种方式无法读取响应内容
+            // 所以直接提示用户使用手动输入方式
+            setTimeout(() => {
+                mobilePreview.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <div style="color: #ff9800; font-size: 1.2em; margin-bottom: 15px;">⚠️</div>
+                        <p style="color: #333; font-weight: 600; margin-bottom: 10px;">无法自动获取数据</p>
+                        <p style="font-size: 0.9em; color: #666; margin-bottom: 20px;">由于浏览器的CORS安全策略，无法直接跨域获取数据</p>
+                        <div style="margin-top: 20px;">
+                            <button onclick="showJsonInput()" style="padding: 12px 24px; background: #4a90e2; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 10px; font-weight: 600;">手动输入JSON</button>
+                            <button onclick="openUrl()" style="padding: 12px 24px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">在新窗口打开</button>
+                        </div>
+                        <div style="margin-top: 25px; padding: 20px; background: #e7f3ff; border-radius: 8px; text-align: left; font-size: 0.9em; border-left: 4px solid #4a90e2;">
+                            <strong style="color: #4a90e2;">📋 使用步骤：</strong><br>
+                            <ol style="margin: 10px 0; padding-left: 20px; line-height: 1.8;">
+                                <li>点击上方"在新窗口打开"按钮</li>
+                                <li>在新窗口中复制返回的完整JSON数据</li>
+                                <li>回到此页面，点击"手动输入JSON"按钮</li>
+                                <li>将JSON数据粘贴到输入框中</li>
+                                <li>点击"解析并预览"即可查看效果</li>
+                            </ol>
+                        </div>
+                    </div>
+                `;
+            }, 500);
+        }
+
+        function showJsonInput() {
+            const mobilePreview = document.querySelector('.mobile-preview');
+            mobilePreview.innerHTML = `
+                <div style="padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">输入JSON数据</h3>
+                        <button onclick="tryAutoFetch()" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9em;">尝试自动获取</button>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 0.85em; color: #666;">
+                        <strong>提示：</strong>由于CORS限制，建议在新窗口打开链接后复制JSON数据，或点击"尝试自动获取"按钮
+                    </div>
+                    <textarea id="jsonInput" style="width: 100%; min-height: 300px; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: monospace; font-size: 0.9em;" placeholder='粘贴JSON数据，例如：
+{
+  "status": 200,
+  "data": {
+    "hyq-3-104001": [...],
+    ...
+  }
+}'></textarea>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button onclick="parseJsonInput()" style="flex: 1; padding: 12px; background: #4a90e2; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">解析并预览</button>
+                        <button onclick="openUrl()" style="flex: 1; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer;">在新窗口打开</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function parseJsonInput() {
+            const jsonInput = document.getElementById('jsonInput');
+            const jsonText = jsonInput.value.trim();
+            
+            if (!jsonText) {
+                alert('请输入JSON数据');
+                return;
+            }
+            
+            try {
+                const result = JSON.parse(jsonText);
+                
+                if (result.status === 200 && result.data) {
+                    renderPreview(result.data);
+                } else if (result.data) {
+                    // 如果没有status字段，直接使用data
+                    renderPreview(result.data);
+                } else {
+                    alert('JSON格式不正确，请确保包含data字段');
+                }
+            } catch (error) {
+                alert('JSON解析失败: ' + error.message);
+            }
+        }
+
+        function renderPreview(data) {
+            const mobilePreview = document.querySelector('.mobile-preview');
+            let html = '';
+
+            // 视频区域 (hyq-2-101002)
+            if (data['hyq-2-101002'] && data['hyq-2-101002'].src) {
+                const videoSrc = data['hyq-2-101002'].src.startsWith('//') ? 'https:' + data['hyq-2-101002'].src : data['hyq-2-101002'].src;
+                html += `
+                    <div class="video-section">
+                        <div class="video-logo">
+                            <div class="cneb">CNEB</div>
+                            <div>中国国家应急广播</div>
+                        </div>
+                        <div class="video-title">瓶装液化石油气的使用安全</div>
+                        <video controls style="width: 100%; border-radius: 8px; margin-top: 10px;">
+                            <source src="${videoSrc}" type="video/mp4">
+                        </video>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="video-section">
+                        <div class="video-logo">
+                            <div class="cneb">CNEB</div>
+                            <div>中国国家应急广播</div>
+                        </div>
+                        <div class="video-title">瓶装液化石油气的使用安全</div>
+                        <div class="video-controls">
+                            <span>▶</span>
+                            <span>0:00 / 3:48</span>
+                            <span>🔊</span>
+                            <span>⛶</span>
+                            <span>⋯</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 气瓶信息 (hyq-3-104001)
+            if (data['hyq-3-104001'] && Array.isArray(data['hyq-3-104001'])) {
+                const fields = data['hyq-3-104001'];
+                const fieldMap = {};
+                fields.forEach(field => {
+                    fieldMap[field.fieldName] = field.fieldValue;
+                });
+
+                // 判断是否合格
+                const qualifiedWatermark = data['hyq-4-104006'] && Array.isArray(data['hyq-4-104006']) 
+                    ? data['hyq-4-104006'].find(f => f.fieldName === 'qualifiedWatermark')
+                    : null;
+                const result = data['hyq-4-104006'] && Array.isArray(data['hyq-4-104006'])
+                    ? data['hyq-4-104006'].find(f => f.fieldName === 'result')
+                    : null;
+
+                const isQualified = result && result.fieldValue === 1;
+                const cylinderStatus = fieldMap.cylinderStatus;
+                const isInUse = cylinderStatus === 1;
+
+                html += `
+                    <div class="info-card">
+                        ${isQualified ? '<div class="qualified-stamp">合格</div>' : ''}
+                        ${isInUse ? `
+                            <div class="status-badge">
+                                <div>投用中</div>
+                                <div style="font-size: 0.8em;">${fieldMap.tenantName || '好运气V3'}</div>
+                            </div>
+                        ` : ''}
+                        <div class="info-card-title">
+                            <span>▶</span>
+                            <span>${data['hyq-1-101005']?.title || '气瓶信息1'}</span>
+                        </div>
+                `;
+
+                fields.forEach(field => {
+                    if (field.fieldValue !== null && field.fieldValue !== undefined && field.fieldValue !== '') {
+                        let valueClass = '';
+                        let displayValue = field.fieldValue;
+
+                        // 处理预警状态
+                        if (field.fieldName === 'gasCylinderWarnStatus') {
+                            displayValue = field.fieldValue === 10 ? '正常' : field.fieldValue;
+                            valueClass = field.fieldValue === 10 ? 'green' : '';
+                        }
+
+                        html += `
+                            <div class="info-item">
+                                <span class="info-label">${field.customTitle || field.title}</span>
+                                <span class="info-value ${valueClass}">${displayValue}</span>
+                            </div>
+                        `;
+                    }
+                });
+
+                html += `</div>`;
+            }
+
+            // 使用预警 (hyq-4-104006)
+            if (data['hyq-4-104006'] && Array.isArray(data['hyq-4-104006'])) {
+                const useCondition = data['hyq-4-104006'].find(f => f.fieldName === 'useConditionQualified');
+                const result = data['hyq-4-104006'].find(f => f.fieldName === 'result');
+                
+                html += `
+                    <div class="warning-card">
+                        <div class="info-card-title">
+                            <span>▶</span>
+                            <span>使用预警</span>
+                        </div>
+                `;
+
+                if (useCondition && result && result.fieldValue === 1) {
+                    html += `
+                        <div class="info-item">
+                            <span class="info-label">使用情况</span>
+                            <span class="info-value green">${useCondition.titleDesc || useCondition.title}</span>
+                        </div>
+                    `;
+                }
+
+                html += `</div>`;
+            }
+
+            // 送检信息 (hyq-5-104002, hyq-6-104003)
+            if ((data['hyq-5-104002'] && data['hyq-5-104002'].length > 0) || 
+                (data['hyq-6-104003'] && data['hyq-6-104003'].length > 0)) {
+                html += `
+                    <div class="inspection-card">
+                        <div class="info-card-title">
+                            <span>▶</span>
+                            <span>送检信息</span>
+                        </div>
+                `;
+
+                if (data['hyq-6-104003'] && Array.isArray(data['hyq-6-104003'])) {
+                    data['hyq-6-104003'].forEach(item => {
+                        if (item.childField && Array.isArray(item.childField)) {
+                            html += `<div style="margin-top: 10px;"><strong>${item.customTitle || item.title}</strong></div>`;
+                            item.childField.forEach(child => {
+                                if (child.fieldValue) {
+                                    html += `
+                                        <div class="info-item">
+                                            <span class="info-label">${child.customTitle || child.title}</span>
+                                            <span class="info-value">${child.fieldValue}</span>
+                                        </div>
+                                    `;
+                                }
+                            });
+                        }
+                    });
+                }
+
+                html += `</div>`;
+            } else {
+                html += `
+                    <div class="inspection-card">
+                        <div class="info-card-title">
+                            <span>▶</span>
+                            <span>送检信息</span>
+                        </div>
+                        <div style="text-align: center; color: #999; padding: 20px;">
+                            <div style="font-size: 2em; opacity: 0.3;">📦</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 图片轮播 (hyq-8-101001, hyq-9-101001)
+            if (data['hyq-8-101001'] && data['hyq-8-101001'].images && data['hyq-8-101001'].images.length > 0) {
+                html += `
+                    <div style="background: #e0f7fa; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+                        <div style="display: flex; gap: 10px; overflow-x: auto;">
+                `;
+                data['hyq-8-101001'].images.forEach(img => {
+                    const imgUrl = img.imgUrl.startsWith('//') ? 'https:' + img.imgUrl : img.imgUrl;
+                    html += `<img src="${imgUrl}" style="max-width: 200px; border-radius: 8px;" alt="${img.imgTitle || ''}">`;
+                });
+                html += `</div></div>`;
+            }
+
+            // 操作按钮 (hyq-10-102006)
+            if (data['hyq-10-102006']) {
+                html += `<div class="action-buttons">`;
+                if (data['hyq-10-102006'].isShowPhoneGas === 1) {
+                    html += `<button class="action-btn">电话订气</button>`;
+                }
+                if (data['hyq-10-102006'].isShowWxGas === 1) {
+                    html += `<button class="action-btn">微信订气</button>`;
+                }
+                html += `</div>`;
+            } else {
+                html += `
+                    <div class="action-buttons">
+                        <button class="action-btn">电话订气</button>
+                        <button class="action-btn">微信订气</button>
+                    </div>
+                `;
+            }
+
+            mobilePreview.innerHTML = html;
+        }
+
+        function copyUrl() {
+            if (!currentUrl) {
+                alert('请先输入参数生成URL');
+                return;
+            }
+
+            // 使用现代API复制到剪贴板
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(currentUrl).then(() => {
+                    alert('URL已复制到剪贴板！');
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    fallbackCopy(currentUrl);
+                });
+            } else {
+                fallbackCopy(currentUrl);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                alert('URL已复制到剪贴板！');
+            } catch (err) {
+                alert('复制失败，请手动复制');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function openUrl() {
+            if (!currentUrl) {
+                alert('请先输入参数生成URL');
+                return;
+            }
+
+            window.open(currentUrl, '_blank');
+        }
+    </script>
+</body>
+</html>
+

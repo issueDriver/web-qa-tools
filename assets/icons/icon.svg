@@ -1,0 +1,45 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- 渐变背景 -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景圆形 -->
+  <circle cx="64" cy="64" r="60" fill="url(#bgGradient)" stroke="#5568d3" stroke-width="2"/>
+  
+  <!-- 工具图标组合 -->
+  <g transform="translate(64, 64)">
+    <!-- 扳手主体 -->
+    <path d="M -20 -6 L -16 -12 L -8 -12 L -4 -6 L -4 6 L -8 12 L -16 12 L -20 6 Z" 
+          fill="white" stroke="none" opacity="0.95"/>
+    
+    <!-- 扳手头部（开口） -->
+    <path d="M 8 -10 Q 12 -8 12 -4 Q 12 0 12 4 Q 12 8 8 10" 
+          fill="none" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.95"/>
+    
+    <!-- 螺丝刀/起子 -->
+    <rect x="-24" y="-2.5" width="6" height="5" rx="1" fill="white" opacity="0.95"/>
+    
+    <!-- 小齿轮装饰 -->
+    <g transform="translate(-8, -8)">
+      <circle cx="0" cy="0" r="5" fill="white" opacity="0.95"/>
+      <circle cx="0" cy="0" r="2.5" fill="#667eea"/>
+      <rect x="-0.5" y="-5" width="1" height="10" fill="#667eea"/>
+      <rect x="-5" y="-0.5" width="10" height="1" fill="#667eea"/>
+    </g>
+    
+    <!-- 锤子 -->
+    <g transform="translate(12, 8)">
+      <rect x="-2" y="-8" width="4" height="8" rx="1" fill="white" opacity="0.95"/>
+      <rect x="-4" y="0" width="8" height="3" rx="1" fill="white" opacity="0.95"/>
+    </g>
+  </g>
+  
+  <!-- 装饰性光点 -->
+  <circle cx="30" cy="30" r="3" fill="white" opacity="0.5"/>
+  <circle cx="98" cy="30" r="2.5" fill="white" opacity="0.5"/>
+  <circle cx="98" cy="98" r="2" fill="white" opacity="0.5"/>
+</svg>

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>税率计算器 & 科学计算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #e0f2f7 0%, #d4e8f0 50%, #c8e0ea 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #4a90e2;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .calc-mode {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .mode-btn.active {
+            background: #4a90e2;
+            color: white;
+            border-color: #4a90e2;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 25px;
+        }
+
+        .btn:hover {
+            background: #3a7bc8;
+        }
+
+        .result {
+            background: #f5f7fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .result-value {
+            color: #333;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .formula {
+            background: #fff9e6;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        /* 标签页样式 */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 1em;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #4a90e2;
+            border-bottom-color: #4a90e2;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 科学计算器样式 */
+        .scientific-calculator {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #f5f5f5;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .calc-display {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            text-align: right;
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            word-break: break-all;
+            overflow-wrap: break-word;
+        }
+
+        .calc-controls {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .angle-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .angle-toggle-btn {
+            padding: 8px;
+            border: none;
+            background: #e8e8e8;
+            color: #666;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .angle-toggle-btn.active {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .control-btn {
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            background: #e8e8e8;
+            color: #333;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .control-btn:hover {
+            background: #d0d0d0;
+            transform: translateY(-1px);
+        }
+
+        .control-btn.active {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .calc-buttons {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .calc-btn {
+            padding: 16px 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #ffffff;
+            color: #333;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            font-weight: 500;
+        }
+
+        .calc-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .calc-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .calc-btn.number {
+            background: #ffffff;
+        }
+
+        .calc-btn.operator {
+            background: #e8f4fd;
+            color: #4a90e2;
+        }
+
+        .calc-btn.function {
+            background: #f0f0f0;
+            font-size: 0.9em;
+        }
+
+        .calc-btn.equals {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .calc-btn.clear {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            .calc-mode {
+                flex-direction: column;
+            }
+            .scientific-calculator {
+                padding: 15px;
+            }
+            .calc-display {
+                font-size: 2em;
+                padding: 15px;
+            }
+            .calc-btn {
+                padding: 14px 6px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">← 返回首页</a>
+        <div class="header">
+            <h1>💰 税率计算器 & 科学计算器</h1>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="tax">税率计算器</button>
+            <button class="tab" data-tab="scientific">科学计算器</button>
+        </div>
+
+        <!-- 税率计算器内容 -->
+        <div class="tab-content active" id="taxContent">
+        <div class="calc-mode">
+            <button class="mode-btn active" data-mode="tax-included">含税金额计算</button>
+            <button class="mode-btn" data-mode="tax-excluded">不含税金额计算</button>
+        </div>
+
+        <form id="taxForm">
+            <div class="form-group" id="taxIncludedGroup">
+                <label for="taxIncluded">含税金额（元）</label>
+                <input type="number" id="taxIncluded" placeholder="例如：11300" step="0.01">
+            </div>
+
+            <div class="form-group" id="taxExcludedGroup" style="display: none;">
+                <label for="taxExcluded">不含税金额（元）</label>
+                <input type="number" id="taxExcluded" placeholder="例如：10000" step="0.01">
+            </div>
+
+            <div class="form-group">
+                <label for="taxRate">税率（%）</label>
+                <input type="number" id="taxRate" placeholder="例如：13" step="0.01" value="13">
+            </div>
+
+            <button type="submit" class="btn">计算</button>
+        </form>
+
+        <div id="result" class="result" style="display: none;">
+            <div class="result-item">
+                <span class="result-label">不含税金额：</span>
+                <span class="result-value" id="resultExcluded">0.00</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">税额：</span>
+                <span class="result-value" id="resultTax">0.00</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">含税金额：</span>
+                <span class="result-value" id="resultIncluded">0.00</span>
+            </div>
+        </div>
+
+        <div class="formula">
+            <strong>计算公式：</strong><br>
+            不含税金额 = 含税金额 ÷ (1 + 税率)<br>
+            税额 = 不含税金额 × 税率<br>
+            含税金额 = 不含税金额 + 税额
+        </div>
+        </div>
+
+        <!-- 科学计算器内容 -->
+        <div class="tab-content" id="scientificContent">
+            <div class="scientific-calculator">
+                <div class="calc-display" id="calcDisplay">0</div>
+                
+                <div class="calc-controls">
+                    <div class="angle-toggle">
+                        <button class="angle-toggle-btn" id="radBtn" onclick="setAngleMode('Rad')">Rad</button>
+                        <button class="angle-toggle-btn" id="degBtn" onclick="setAngleMode('Deg')">Deg</button>
+                    </div>
+                    <button class="control-btn" id="invMode" onclick="toggleInvMode()">Inv</button>
+                    <button class="control-btn" onclick="inputBracket('(')">(</button>
+                    <button class="control-btn" onclick="inputBracket(')')">)</button>
+                    <button class="control-btn" onclick="inputOperator('%')">%</button>
+                    <button class="control-btn clear" onclick="clearAll()">AC</button>
+                </div>
+
+                <div class="calc-buttons">
+                    <button class="calc-btn function" onclick="inputFunction('factorial')">x!</button>
+                    <button class="calc-btn function" onclick="inputFunction('sin')">sin</button>
+                    <button class="calc-btn function" onclick="inputFunction('cos')">cos</button>
+                    <button class="calc-btn number" onclick="inputNumber('7')">7</button>
+                    <button class="calc-btn number" onclick="inputNumber('8')">8</button>
+                    <button class="calc-btn number" onclick="inputNumber('9')">9</button>
+                    <button class="calc-btn operator" onclick="inputOperator('÷')">÷</button>
+
+                    <button class="calc-btn function" onclick="inputConstant('π')">π</button>
+                    <button class="calc-btn function" onclick="inputFunction('tan')">tan</button>
+                    <button class="calc-btn function" onclick="inputFunction('log')">log</button>
+                    <button class="calc-btn number" onclick="inputNumber('4')">4</button>
+                    <button class="calc-btn number" onclick="inputNumber('5')">5</button>
+                    <button class="calc-btn number" onclick="inputNumber('6')">6</button>
+                    <button class="calc-btn operator" onclick="inputOperator('×')">×</button>
+
+                    <button class="calc-btn function" onclick="inputConstant('e')">e</button>
+                    <button class="calc-btn function" onclick="inputFunction('ln')">ln</button>
+                    <button class="calc-btn function" onclick="inputFunction('sqrt')">√</button>
+                    <button class="calc-btn number" onclick="inputNumber('1')">1</button>
+                    <button class="calc-btn number" onclick="inputNumber('2')">2</button>
+                    <button class="calc-btn number" onclick="inputNumber('3')">3</button>
+                    <button class="calc-btn operator" onclick="inputOperator('-')">-</button>
+
+                    <button class="calc-btn function" onclick="inputFunction('exp')">EXP</button>
+                    <button class="calc-btn function" onclick="inputAns()">Ans</button>
+                    <button class="calc-btn function" onclick="inputFunction('pow')">xʸ</button>
+                    <button class="calc-btn number" onclick="inputNumber('0')">0</button>
+                    <button class="calc-btn number" onclick="inputDecimal()">.</button>
+                    <button class="calc-btn equals" onclick="calculate()">=</button>
+                    <button class="calc-btn operator" onclick="inputOperator('+')">+</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 标签页切换
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const targetTab = this.dataset.tab;
+                
+                // 更新标签页状态
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 更新内容显示
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(targetTab + 'Content').classList.add('active');
+            });
+        });
+
+        // 税率计算器代码
+        let currentMode = 'tax-included';
+
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentMode = this.dataset.mode;
+
+                if (currentMode === 'tax-included') {
+                    document.getElementById('taxIncludedGroup').style.display = 'block';
+                    document.getElementById('taxExcludedGroup').style.display = 'none';
+                } else {
+                    document.getElementById('taxIncludedGroup').style.display = 'none';
+                    document.getElementById('taxExcludedGroup').style.display = 'block';
+                }
+
+                document.getElementById('result').style.display = 'none';
+            });
+        });
+
+        document.getElementById('taxForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const taxRate = parseFloat(document.getElementById('taxRate').value) / 100;
+            let taxExcluded, taxAmount, taxIncluded;
+
+            if (currentMode === 'tax-included') {
+                taxIncluded = parseFloat(document.getElementById('taxIncluded').value);
+                if (!taxIncluded || taxIncluded <= 0) {
+                    alert('请输入有效的含税金额');
+                    return;
+                }
+                taxExcluded = taxIncluded / (1 + taxRate);
+                taxAmount = taxExcluded * taxRate;
+            } else {
+                taxExcluded = parseFloat(document.getElementById('taxExcluded').value);
+                if (!taxExcluded || taxExcluded <= 0) {
+                    alert('请输入有效的不含税金额');
+                    return;
+                }
+                taxAmount = taxExcluded * taxRate;
+                taxIncluded = taxExcluded + taxAmount;
+            }
+
+            document.getElementById('resultExcluded').textContent = taxExcluded.toFixed(2);
+            document.getElementById('resultTax').textContent = taxAmount.toFixed(2);
+            document.getElementById('resultIncluded').textContent = taxIncluded.toFixed(2);
+            document.getElementById('result').style.display = 'block';
+        });
+
+        // 科学计算器代码
+        let display = '0';
+        let lastAnswer = 0;
+        let angleMode = 'Deg'; // Rad 或 Deg
+        let invMode = false;
+
+        function updateDisplay() {
+            const displayEl = document.getElementById('calcDisplay');
+            displayEl.textContent = display || '0';
+        }
+
+        function setAngleMode(mode) {
+            angleMode = mode;
+            // 移除所有active状态
+            document.getElementById('radBtn').classList.remove('active');
+            document.getElementById('degBtn').classList.remove('active');
+            // 只给选中的按钮添加active
+            if (mode === 'Rad') {
+                document.getElementById('radBtn').classList.add('active');
+            } else {
+                document.getElementById('degBtn').classList.add('active');
+            }
+        }
+
+        function toggleInvMode() {
+            invMode = !invMode;
+            const btn = document.getElementById('invMode');
+            btn.classList.toggle('active', invMode);
+        }
+
+        function inputNumber(num) {
+            if (display === '0' || display === 'Error') {
+                display = num;
+            } else {
+                display += num;
+            }
+            updateDisplay();
+        }
+
+        function inputDecimal() {
+            if (display === '0' || display === 'Error') {
+                display = '0.';
+            } else if (!display.includes('.')) {
+                display += '.';
+            }
+            updateDisplay();
+        }
+
+        function inputOperator(op) {
+            if (display === 'Error') {
+                display = '0';
+            }
+            const lastChar = display.slice(-1);
+            if (['+', '-', '×', '÷', '%'].includes(lastChar)) {
+                display = display.slice(0, -1) + op;
+            } else {
+                display += op;
+            }
+            updateDisplay();
+        }
+
+        function inputBracket(bracket) {
+            if (display === '0' || display === 'Error') {
+                display = bracket;
+            } else {
+                display += bracket;
+            }
+            updateDisplay();
+        }
+
+        function inputConstant(constant) {
+            let value;
+            if (constant === 'π') {
+                value = Math.PI;
+            } else if (constant === 'e') {
+                value = Math.E;
+            }
+            
+            if (display === '0' || display === 'Error') {
+                display = value.toString();
+            } else {
+                display += value.toString();
+            }
+            updateDisplay();
+        }
+
+        function inputAns() {
+            if (display === '0' || display === 'Error') {
+                display = lastAnswer.toString();
+            } else {
+                display += lastAnswer.toString();
+            }
+            updateDisplay();
+        }
+
+        function inputFunction(func) {
+            try {
+                let value = parseFloat(display);
+                if (isNaN(value)) {
+                    // 如果不是数字，尝试从表达式中提取最后一个数字
+                    const match = display.match(/(\d+\.?\d*)$/);
+                    if (match) {
+                        value = parseFloat(match[1]);
+                    } else {
+                        display = 'Error';
+                        updateDisplay();
+                        return;
+                    }
+                }
+
+                let result;
+                const angle = angleMode === 'Deg' ? value * Math.PI / 180 : value;
+
+                switch(func) {
+                    case 'sin':
+                        result = invMode ? Math.asin(value) : Math.sin(angle);
+                        if (angleMode === 'Deg' && !invMode) {
+                            result = Math.sin(angle);
+                        } else if (angleMode === 'Deg' && invMode) {
+                            result = Math.asin(value) * 180 / Math.PI;
+                        }
+                        break;
+                    case 'cos':
+                        result = invMode ? Math.acos(value) : Math.cos(angle);
+                        if (angleMode === 'Deg' && invMode) {
+                            result = Math.acos(value) * 180 / Math.PI;
+                        }
+                        break;
+                    case 'tan':
+                        result = invMode ? Math.atan(value) : Math.tan(angle);
+                        if (angleMode === 'Deg' && invMode) {
+                            result = Math.atan(value) * 180 / Math.PI;
+                        }
+                        break;
+                    case 'log':
+                        result = invMode ? Math.pow(10, value) : Math.log10(value);
+                        break;
+                    case 'ln':
+                        result = invMode ? Math.exp(value) : Math.log(value);
+                        break;
+                    case 'sqrt':
+                        result = invMode ? value * value : Math.sqrt(value);
+                        break;
+                    case 'factorial':
+                        result = factorial(value);
+                        break;
+                    case 'exp':
+                        result = Math.exp(value);
+                        break;
+                    case 'pow':
+                        // x^y 需要两个操作数，这里先保存当前值
+                        display = value + '^';
+                        updateDisplay();
+                        return;
+                    default:
+                        return;
+                }
+
+                if (isNaN(result) || !isFinite(result)) {
+                    display = 'Error';
+                } else {
+                    display = result.toString();
+                }
+                updateDisplay();
+            } catch (e) {
+                display = 'Error';
+                updateDisplay();
+            }
+        }
+
+        function factorial(n) {
+            if (n < 0 || n !== Math.floor(n)) return NaN;
+            if (n === 0 || n === 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) {
+                result *= i;
+            }
+            return result;
+        }
+
+        function calculate() {
+            try {
+                if (display === 'Error') {
+                    display = '0';
+                    updateDisplay();
+                    return;
+                }
+
+                // 替换显示符号为JavaScript可计算的符号
+                let expression = display
+                    .replace(/×/g, '*')
+                    .replace(/÷/g, '/')
+                    .replace(/π/g, Math.PI.toString())
+                    .replace(/e(?![0-9])/g, Math.E.toString())
+                    .replace(/\^/g, '**');
+
+                // 处理百分比
+                expression = expression.replace(/(\d+\.?\d*)%/g, (match, num) => {
+                    return `(${num}/100)`;
+                });
+
+                // 计算表达式
+                const result = Function('"use strict"; return (' + expression + ')')();
+                
+                if (isNaN(result) || !isFinite(result)) {
+                    display = 'Error';
+                } else {
+                    // 格式化结果
+                    if (Math.abs(result) > 1e10 || (Math.abs(result) < 1e-6 && result !== 0)) {
+                        display = result.toExponential(6);
+                    } else {
+                        display = parseFloat(result.toPrecision(12)).toString();
+                    }
+                    lastAnswer = result;
+                }
+                updateDisplay();
+            } catch (e) {
+                display = 'Error';
+                updateDisplay();
+            }
+        }
+
+        function clearAll() {
+            display = '0';
+            updateDisplay();
+        }
+
+        // 初始化显示
+        updateDisplay();
+        // 不设置初始高亮，只有用户点击后才高亮
+    </script>
+</body>
+</html>
+

@@ -57,6 +57,123 @@
             flex-wrap: wrap;
         }
 
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .view-btn {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .view-btn.active {
+            background: #4a90e2;
+            color: white;
+            border-color: #4a90e2;
+        }
+
+        .json-tree {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .json-node {
+            margin-left: 20px;
+            position: relative;
+        }
+
+        .json-node.collapsed > .json-children {
+            display: none;
+        }
+
+        .json-toggle {
+            position: absolute;
+            left: -18px;
+            cursor: pointer;
+            user-select: none;
+            color: #4a90e2;
+            font-weight: bold;
+            width: 16px;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .json-toggle:hover {
+            color: #3a7bc8;
+        }
+
+        .json-key {
+            color: #881391;
+            font-weight: 600;
+        }
+
+        .json-key::after {
+            content: ':';
+            color: #333;
+            margin-right: 5px;
+        }
+
+        .json-value {
+            color: #1a1aa6;
+        }
+
+        .json-value.string {
+            color: #0b7500;
+        }
+
+        .json-value.string::before,
+        .json-value.string::after {
+            content: '"';
+            color: #0b7500;
+        }
+
+        .json-value.number {
+            color: #1a1aa6;
+        }
+
+        .json-value.boolean {
+            color: #ff0000;
+        }
+
+        .json-value.null {
+            color: #808080;
+            font-style: italic;
+        }
+
+        .json-bracket {
+            color: #333;
+            font-weight: bold;
+        }
+
+        .json-comma {
+            color: #333;
+            margin-right: 5px;
+        }
+
+        .json-line {
+            line-height: 1.6;
+            padding: 2px 0;
+        }
+
+        .json-line:hover {
+            background: #f5f5f5;
+        }
+
         .btn {
             padding: 10px 20px;
             background: #4a90e2;
@@ -212,7 +329,14 @@
                     <span>格式化结果</span>
                     <span id="outputCharCount">0 字符</span>
                 </div>
-                <textarea id="outputJSON" placeholder="格式化后的JSON将显示在这里..." readonly></textarea>
+                <div class="view-toggle">
+                    <button class="view-btn active" id="treeViewBtn" onclick="switchView('tree')">树形视图</button>
+                    <button class="view-btn" id="textViewBtn" onclick="switchView('text')">文本视图</button>
+                    <button class="view-btn" onclick="expandAll()" style="margin-left: auto;">全部展开</button>
+                    <button class="view-btn" onclick="collapseAll()">全部折叠</button>
+                </div>
+                <div id="jsonTreeView" class="json-tree" style="display: block;"></div>
+                <textarea id="outputJSON" placeholder="格式化后的JSON将显示在这里..." readonly style="display: none;"></textarea>
                 <div id="outputError" class="error-message"></div>
                 <div id="outputSuccess" class="success-message"></div>
             </div>
@@ -231,9 +355,12 @@
     <script>
         const inputTextarea = document.getElementById('inputJSON');
         const outputTextarea = document.getElementById('outputJSON');
+        const jsonTreeView = document.getElementById('jsonTreeView');
         const inputError = document.getElementById('inputError');
         const outputError = document.getElementById('outputError');
         const outputSuccess = document.getElementById('outputSuccess');
+        let currentView = 'tree';
+        let currentJSON = null;
 
         // 更新字符计数
         function updateCharCount() {
@@ -274,6 +401,28 @@
             }
         }
 
+        // 切换视图
+        function switchView(view) {
+            currentView = view;
+            const treeViewBtn = document.getElementById('treeViewBtn');
+            const textViewBtn = document.getElementById('textViewBtn');
+            
+            if (view === 'tree') {
+                treeViewBtn.classList.add('active');
+                textViewBtn.classList.remove('active');
+                jsonTreeView.style.display = 'block';
+                outputTextarea.style.display = 'none';
+                if (currentJSON) {
+                    renderJSONTree(currentJSON);
+                }
+            } else {
+                treeViewBtn.classList.remove('active');
+                textViewBtn.classList.add('active');
+                jsonTreeView.style.display = 'none';
+                outputTextarea.style.display = 'block';
+            }
+        }
+
         // 格式化JSON
         function formatJSON() {
             hideMessages();
@@ -286,14 +435,173 @@
 
             try {
                 const obj = parseJSON(input);
+                currentJSON = obj;
                 const formatted = JSON.stringify(obj, null, 2);
                 outputTextarea.value = formatted;
+                
+                if (currentView === 'tree') {
+                    renderJSONTree(obj);
+                }
+                
                 updateCharCount();
                 showSuccess('✓ JSON格式化成功');
             } catch (e) {
                 showError(inputError, e.message);
                 outputTextarea.value = '';
+                jsonTreeView.innerHTML = '';
             }
+        }
+
+        // 渲染JSON树形视图
+        function renderJSONTree(obj) {
+            jsonTreeView.innerHTML = '';
+            const container = document.createElement('div');
+            renderNode(container, obj, '', 0, true);
+            jsonTreeView.appendChild(container);
+        }
+
+        // 渲染节点
+        function renderNode(container, value, key, level, isRoot = false) {
+            const node = document.createElement('div');
+            node.className = 'json-node';
+            
+            if (isRoot) {
+                node.classList.add('expanded');
+            }
+
+            if (value === null) {
+                const line = document.createElement('div');
+                line.className = 'json-line';
+                line.style.paddingLeft = (level * 20) + 'px';
+                if (key) {
+                    line.innerHTML = `<span class="json-key">${escapeHtml(key)}</span> <span class="json-value null">null</span>`;
+                } else {
+                    line.innerHTML = `<span class="json-value null">null</span>`;
+                }
+                container.appendChild(line);
+            } else if (Array.isArray(value)) {
+                const line = document.createElement('div');
+                line.className = 'json-line';
+                line.style.paddingLeft = (level * 20) + 'px';
+                
+                const toggle = document.createElement('span');
+                toggle.className = 'json-toggle';
+                toggle.textContent = '▼';
+                toggle.onclick = () => toggleNode(node);
+                line.appendChild(toggle);
+                
+                if (key !== '') {
+                    line.innerHTML += `<span class="json-key">${escapeHtml(key)}</span> `;
+                }
+                line.innerHTML += `<span class="json-bracket">[</span> <span class="json-value">${value.length} 项</span> <span class="json-bracket">]</span>`;
+                
+                const children = document.createElement('div');
+                children.className = 'json-children';
+                
+                value.forEach((item, index) => {
+                    renderNode(children, item, index, level + 1);
+                    if (index < value.length - 1) {
+                        const comma = document.createElement('div');
+                        comma.className = 'json-line';
+                        comma.style.paddingLeft = ((level + 1) * 20) + 'px';
+                        comma.innerHTML = '<span class="json-comma">,</span>';
+                        children.appendChild(comma);
+                    }
+                });
+                
+                node.appendChild(line);
+                node.appendChild(children);
+                container.appendChild(node);
+            } else if (typeof value === 'object') {
+                const line = document.createElement('div');
+                line.className = 'json-line';
+                line.style.paddingLeft = (level * 20) + 'px';
+                
+                const toggle = document.createElement('span');
+                toggle.className = 'json-toggle';
+                toggle.textContent = '▼';
+                toggle.onclick = () => toggleNode(node);
+                line.appendChild(toggle);
+                
+                if (key !== '') {
+                    line.innerHTML += `<span class="json-key">${escapeHtml(key)}</span> `;
+                }
+                const keys = Object.keys(value);
+                line.innerHTML += `<span class="json-bracket">{</span> <span class="json-value">${keys.length} 个属性</span> <span class="json-bracket">}</span>`;
+                
+                const children = document.createElement('div');
+                children.className = 'json-children';
+                
+                keys.forEach((k, index) => {
+                    renderNode(children, value[k], k, level + 1);
+                    if (index < keys.length - 1) {
+                        const comma = document.createElement('div');
+                        comma.className = 'json-line';
+                        comma.style.paddingLeft = ((level + 1) * 20) + 'px';
+                        comma.innerHTML = '<span class="json-comma">,</span>';
+                        children.appendChild(comma);
+                    }
+                });
+                
+                node.appendChild(line);
+                node.appendChild(children);
+                container.appendChild(node);
+            } else {
+                const line = document.createElement('div');
+                line.className = 'json-line';
+                line.style.paddingLeft = (level * 20) + 'px';
+                
+                if (key !== '') {
+                    line.innerHTML = `<span class="json-key">${escapeHtml(key)}</span> `;
+                }
+                const valueType = typeof value;
+                const valueClass = valueType === 'string' ? 'string' : 
+                                 valueType === 'number' ? 'number' : 
+                                 valueType === 'boolean' ? 'boolean' : 'null';
+                const displayValue = valueType === 'string' ? escapeHtml(value) : value;
+                line.innerHTML += `<span class="json-value ${valueClass}">${displayValue}</span>`;
+                container.appendChild(line);
+            }
+        }
+
+        // 切换节点展开/折叠
+        function toggleNode(node) {
+            node.classList.toggle('collapsed');
+            const toggle = node.querySelector('.json-toggle');
+            if (toggle) {
+                toggle.textContent = node.classList.contains('collapsed') ? '▶' : '▼';
+            }
+        }
+
+        // 全部展开
+        function expandAll() {
+            const nodes = jsonTreeView.querySelectorAll('.json-node');
+            nodes.forEach(node => {
+                node.classList.remove('collapsed');
+                const toggle = node.querySelector('.json-toggle');
+                if (toggle) {
+                    toggle.textContent = '▼';
+                }
+            });
+        }
+
+        // 全部折叠
+        function collapseAll() {
+            const nodes = jsonTreeView.querySelectorAll('.json-node');
+            nodes.forEach(node => {
+                node.classList.add('collapsed');
+                const toggle = node.querySelector('.json-toggle');
+                if (toggle) {
+                    toggle.textContent = '▶';
+                }
+            });
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // 压缩JSON
@@ -308,13 +616,19 @@
 
             try {
                 const obj = parseJSON(input);
+                currentJSON = obj;
                 const compressed = JSON.stringify(obj);
                 outputTextarea.value = compressed;
+                
+                // 压缩模式下切换到文本视图
+                switchView('text');
+                
                 updateCharCount();
                 showSuccess('✓ JSON压缩成功');
             } catch (e) {
                 showError(inputError, e.message);
                 outputTextarea.value = '';
+                jsonTreeView.innerHTML = '';
             }
         }
 
@@ -330,13 +644,21 @@
 
             try {
                 const obj = parseJSON(input);
+                currentJSON = obj;
                 const formatted = JSON.stringify(obj, null, 2);
                 outputTextarea.value = formatted;
+                
+                if (currentView === 'tree') {
+                    renderJSONTree(obj);
+                }
+                
                 updateCharCount();
-                showSuccess('✓ JSON格式正确！共 ' + Object.keys(obj).length + ' 个键');
+                const keyCount = typeof obj === 'object' && !Array.isArray(obj) ? Object.keys(obj).length : 'N/A';
+                showSuccess('✓ JSON格式正确！' + (keyCount !== 'N/A' ? `共 ${keyCount} 个键` : ''));
             } catch (e) {
                 showError(inputError, e.message);
                 outputTextarea.value = '';
+                jsonTreeView.innerHTML = '';
             }
         }
 
@@ -350,13 +672,27 @@
         // 清空输出
         function clearOutput() {
             outputTextarea.value = '';
+            jsonTreeView.innerHTML = '';
+            currentJSON = null;
             hideMessages();
             updateCharCount();
         }
 
         // 复制输出
         function copyOutput() {
-            const text = outputTextarea.value;
+            let text;
+            if (currentView === 'tree') {
+                // 从树形视图获取文本
+                if (currentJSON) {
+                    text = JSON.stringify(currentJSON, null, 2);
+                } else {
+                    alert('没有可复制的内容');
+                    return;
+                }
+            } else {
+                text = outputTextarea.value;
+            }
+            
             if (!text) {
                 alert('输出内容为空');
                 return;

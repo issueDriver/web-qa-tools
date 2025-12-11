@@ -219,6 +219,54 @@
             cursor: not-allowed;
         }
 
+        .map-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            text-align: center;
+        }
+
+        .map-loading-spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e0e0e0;
+            border-top-color: #4a90e2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        .map-error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px 30px;
+            border-radius: 8px;
+            z-index: 1000;
+            text-align: center;
+            max-width: 300px;
+        }
+
+        .map-error button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
         @media (max-width: 968px) {
             .main-content {
                 grid-template-columns: 1fr;
@@ -360,8 +408,18 @@
                 </div>
             </div>
 
-            <div class="map-container">
+            <div class="map-container" style="position: relative;">
                 <div id="map"></div>
+                <div id="mapLoading" class="map-loading" style="display: none;">
+                    <div class="map-loading-spinner"></div>
+                    <span>正在加载地图...</span>
+                </div>
+                <div id="mapError" class="map-error" style="display: none;">
+                    <div style="font-weight: bold; margin-bottom: 10px;">⚠️ 地图加载失败</div>
+                    <div style="font-size: 0.9em; color: #666; margin-bottom: 10px;">请检查网络连接或切换地图源</div>
+                    <button onclick="retryMapLoad()">重试</button>
+                    <button onclick="switchMapSource()" style="margin-left: 10px;">切换地图源</button>
+                </div>
             </div>
         </div>
     </div>
@@ -370,29 +428,169 @@
         let map;
         let marker;
         let history = JSON.parse(localStorage.getItem('coordinateHistory') || '[]');
+        let currentTileLayer = null;
+        let mapLoadTimeout = null;
+        let currentMapSource = localStorage.getItem('mapSource') || 'osm';
+
+        // 地图源配置
+        const mapSources = {
+            osm: {
+                name: 'OpenStreetMap',
+                url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            },
+            cartodb: {
+                name: 'CartoDB Positron',
+                url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                attribution: '© OpenStreetMap contributors © CARTO',
+                maxZoom: 20
+            },
+            cartodbDark: {
+                name: 'CartoDB Dark Matter',
+                url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                attribution: '© OpenStreetMap contributors © CARTO',
+                maxZoom: 20
+            },
+            esri: {
+                name: 'Esri WorldStreetMap',
+                url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+                attribution: 'Tiles © Esri',
+                maxZoom: 19
+            }
+        };
+
+        // 显示加载状态
+        function showMapLoading() {
+            document.getElementById('mapLoading').style.display = 'block';
+            document.getElementById('mapError').style.display = 'none';
+        }
+
+        // 隐藏加载状态
+        function hideMapLoading() {
+            document.getElementById('mapLoading').style.display = 'none';
+        }
+
+        // 显示错误
+        function showMapError() {
+            document.getElementById('mapLoading').style.display = 'none';
+            document.getElementById('mapError').style.display = 'block';
+        }
 
         // 初始化地图
         function initMap() {
-            // 默认定位到北京
-            map = L.map('map').setView([39.90923, 116.397428], 13);
+            showMapLoading();
+            
+            try {
+                // 默认定位到北京
+                map = L.map('map', {
+                    zoomControl: true,
+                    attributionControl: true
+                }).setView([39.90923, 116.397428], 13);
 
-            // 添加OpenStreetMap图层
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
-                maxZoom: 19
-            }).addTo(map);
+                // 设置超时（10秒）
+                mapLoadTimeout = setTimeout(() => {
+                    if (!map || !currentTileLayer || !map.hasLayer(currentTileLayer)) {
+                        console.warn('地图加载超时，尝试切换地图源');
+                        switchMapSource();
+                    }
+                }, 10000);
 
-            // 添加点击事件
-            map.on('click', function(e) {
-                const lat = e.latlng.lat;
-                const lng = e.latlng.lng;
-                updateCurrentCoordinate(lat, lng);
-                addMarker(lat, lng);
-                addToHistory(lat, lng);
+                // 加载地图图层
+                loadMapLayer();
+
+                // 监听地图加载完成
+                map.whenReady(() => {
+                    clearTimeout(mapLoadTimeout);
+                    hideMapLoading();
+                    console.log('地图加载完成');
+                });
+
+                // 监听图层加载错误
+                map.on('tileerror', function(error, tile) {
+                    console.warn('地图瓦片加载错误:', error);
+                    // 如果连续多个瓦片加载失败，显示错误提示
+                    if (!mapLoadTimeout) {
+                        setTimeout(() => {
+                            if (document.getElementById('mapError').style.display === 'none') {
+                                showMapError();
+                            }
+                        }, 5000);
+                    }
+                });
+
+                // 添加点击事件
+                map.on('click', function(e) {
+                    const lat = e.latlng.lat;
+                    const lng = e.latlng.lng;
+                    updateCurrentCoordinate(lat, lng);
+                    addMarker(lat, lng);
+                    addToHistory(lat, lng);
+                });
+
+                // 加载历史记录
+                renderHistory();
+
+            } catch (error) {
+                console.error('地图初始化错误:', error);
+                showMapError();
+            }
+        }
+
+        // 加载地图图层
+        function loadMapLayer() {
+            const source = mapSources[currentMapSource];
+            
+            if (currentTileLayer) {
+                map.removeLayer(currentTileLayer);
+            }
+
+            currentTileLayer = L.tileLayer(source.url, {
+                attribution: source.attribution,
+                maxZoom: source.maxZoom,
+                timeout: 8000, // 8秒超时
+                errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
             });
 
-            // 加载历史记录
-            renderHistory();
+            currentTileLayer.addTo(map);
+        }
+
+        // 重试加载地图
+        function retryMapLoad() {
+            hideMapLoading();
+            showMapLoading();
+            
+            if (map) {
+                map.remove();
+            }
+            
+            setTimeout(() => {
+                initMap();
+            }, 500);
+        }
+
+        // 切换地图源
+        function switchMapSource() {
+            const sources = Object.keys(mapSources);
+            const currentIndex = sources.indexOf(currentMapSource);
+            const nextIndex = (currentIndex + 1) % sources.length;
+            currentMapSource = sources[nextIndex];
+            
+            localStorage.setItem('mapSource', currentMapSource);
+            
+            hideMapLoading();
+            showMapLoading();
+            
+            if (map && currentTileLayer) {
+                loadMapLayer();
+                
+                // 等待图层加载
+                setTimeout(() => {
+                    hideMapLoading();
+                }, 2000);
+            } else {
+                retryMapLoad();
+            }
         }
 
         // 更新当前坐标显示

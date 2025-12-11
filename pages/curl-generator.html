@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cURL命令生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #e0f2f7 0%, #d4e8f0 50%, #c8e0ea 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #4a90e2;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        input[type="text"],
+        input[type="url"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .headers-container {
+            margin-top: 10px;
+        }
+
+        .header-item {
+            display: grid;
+            grid-template-columns: 1fr 2fr auto;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .header-item input {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #3a7bc8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+
+        .result-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result-section.active {
+            display: block;
+        }
+
+        .result-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .curl-output {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin-bottom: 15px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #4a90e2;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .info-box strong {
+            color: #333;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #856404;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .header-item {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">← 返回首页</a>
+        <div class="header">
+            <h1>🔧 cURL命令生成器</h1>
+        </div>
+
+        <div class="form-section">
+            <div class="section-title">快速导入（粘贴原始请求文本）</div>
+            <div class="form-group">
+                <label for="rawInput">粘贴请求信息（支持多种格式）：</label>
+                <textarea id="rawInput" placeholder="粘贴包含URL、Headers、Body的请求信息，工具会自动解析..." style="min-height: 150px;"></textarea>
+            </div>
+            <button class="btn btn-success" onclick="parseRawInput()">解析并填充</button>
+        </div>
+
+        <div class="form-section">
+            <div class="section-title">请求基本信息</div>
+            <div class="form-group">
+                <label for="method">请求方法：</label>
+                <select id="method">
+                    <option value="GET">GET</option>
+                    <option value="POST" selected>POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                    <option value="PATCH">PATCH</option>
+                    <option value="HEAD">HEAD</option>
+                    <option value="OPTIONS">OPTIONS</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="url">请求URL：</label>
+                <input type="url" id="url" placeholder="https://example.com/api/endpoint">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="section-title">请求头 (Headers)</div>
+            <div class="headers-container" id="headersContainer">
+                <div class="header-item">
+                    <input type="text" placeholder="Header名称" class="header-key" value="Content-Type">
+                    <input type="text" placeholder="Header值" class="header-value" value="application/json;charset=UTF-8">
+                    <button class="btn btn-danger btn-small" onclick="removeHeader(this)">删除</button>
+                </div>
+            </div>
+            <button class="btn btn-secondary" onclick="addHeader()">添加Header</button>
+        </div>
+
+        <div class="form-section">
+            <div class="section-title">请求体 (Body)</div>
+            <div class="form-group">
+                <label for="body">JSON Body（仅POST/PUT/PATCH需要）：</label>
+                <textarea id="body" placeholder='{"key": "value"}'></textarea>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn" onclick="generateCurl()">生成cURL命令</button>
+            <button class="btn btn-secondary" onclick="clearAll()">清空所有</button>
+            <button class="btn btn-secondary" onclick="loadExample()">加载示例</button>
+        </div>
+
+        <div class="result-section" id="resultSection">
+            <div class="result-title">生成的cURL命令：</div>
+            <div class="curl-output" id="curlOutput"></div>
+            <div class="btn-group">
+                <button class="btn" onclick="copyCurl()">复制命令</button>
+                <button class="btn btn-secondary" onclick="copyAsBash()">复制为Bash脚本</button>
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <strong>⚠️ 安全提示：</strong><br>
+            • 本工具不会保存或缓存任何输入的信息<br>
+            • 所有数据仅在浏览器本地处理，不会上传到服务器<br>
+            • 请妥善保管生成的cURL命令，避免泄露敏感信息<br>
+            • 使用完毕后建议清空所有输入
+        </div>
+
+        <div class="info-box">
+            <strong>使用说明：</strong><br>
+            • 输入请求方法、URL和Headers<br>
+            • 对于POST/PUT/PATCH请求，可以输入JSON格式的Body<br>
+            • 点击"生成cURL命令"生成对应的curl命令<br>
+            • 可以复制命令直接在终端中使用<br>
+            • 支持添加多个自定义Headers
+        </div>
+    </div>
+
+    <script>
+        // 添加Header行
+        function addHeader() {
+            const container = document.getElementById('headersContainer');
+            const item = document.createElement('div');
+            item.className = 'header-item';
+            item.innerHTML = `
+                <input type="text" placeholder="Header名称" class="header-key">
+                <input type="text" placeholder="Header值" class="header-value">
+                <button class="btn btn-danger btn-small" onclick="removeHeader(this)">删除</button>
+            `;
+            container.appendChild(item);
+        }
+
+        // 删除Header行
+        function removeHeader(btn) {
+            const container = document.getElementById('headersContainer');
+            if (container.children.length > 1) {
+                btn.parentElement.remove();
+            } else {
+                alert('至少需要保留一个Header行');
+            }
+        }
+
+        // 获取所有Headers
+        function getHeaders() {
+            const headers = {};
+            const items = document.querySelectorAll('.header-item');
+            items.forEach(item => {
+                const key = item.querySelector('.header-key').value.trim();
+                const value = item.querySelector('.header-value').value.trim();
+                if (key && value) {
+                    headers[key] = value;
+                }
+            });
+            return headers;
+        }
+
+        // 生成cURL命令
+        function generateCurl() {
+            const method = document.getElementById('method').value;
+            const url = document.getElementById('url').value.trim();
+            const body = document.getElementById('body').value.trim();
+            const headers = getHeaders();
+
+            if (!url) {
+                alert('请输入URL');
+                return;
+            }
+
+            let curlCommand = 'curl -X ' + method;
+
+            // 添加Headers
+            Object.keys(headers).forEach(key => {
+                const value = headers[key];
+                // 转义单引号和特殊字符
+                const escapedValue = value.replace(/'/g, "'\\''");
+                curlCommand += ` \\\n  -H '${key}: ${escapedValue}'`;
+            });
+
+            // 添加Body（仅POST/PUT/PATCH）
+            if (body && ['POST', 'PUT', 'PATCH'].includes(method)) {
+                // 转义JSON中的特殊字符
+                const escapedBody = body.replace(/'/g, "'\\''");
+                curlCommand += ` \\\n  -d '${escapedBody}'`;
+            }
+
+            // 添加URL
+            curlCommand += ` \\\n  '${url}'`;
+
+            // 显示结果
+            document.getElementById('curlOutput').textContent = curlCommand;
+            document.getElementById('resultSection').classList.add('active');
+            document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // 复制cURL命令
+        function copyCurl() {
+            const curlCommand = document.getElementById('curlOutput').textContent;
+            if (!curlCommand) {
+                alert('请先生成cURL命令');
+                return;
+            }
+
+            navigator.clipboard.writeText(curlCommand).then(() => {
+                alert('✓ 已复制到剪贴板');
+            }).catch(() => {
+                // 降级方案
+                const textarea = document.createElement('textarea');
+                textarea.value = curlCommand;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('✓ 已复制到剪贴板');
+                } catch (err) {
+                    alert('复制失败，请手动复制');
+                }
+                document.body.removeChild(textarea);
+            });
+        }
+
+        // 复制为Bash脚本
+        function copyAsBash() {
+            const curlCommand = document.getElementById('curlOutput').textContent;
+            if (!curlCommand) {
+                alert('请先生成cURL命令');
+                return;
+            }
+
+            const bashScript = `#!/bin/bash\n\n${curlCommand}\n`;
+            
+            navigator.clipboard.writeText(bashScript).then(() => {
+                alert('✓ Bash脚本已复制到剪贴板');
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = bashScript;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('✓ Bash脚本已复制到剪贴板');
+                } catch (err) {
+                    alert('复制失败，请手动复制');
+                }
+                document.body.removeChild(textarea);
+            });
+        }
+
+        // 清空所有
+        function clearAll() {
+            if (confirm('确定要清空所有输入吗？')) {
+                document.getElementById('rawInput').value = '';
+                document.getElementById('method').value = 'POST';
+                document.getElementById('url').value = '';
+                document.getElementById('body').value = '';
+                
+                // 重置Headers
+                const container = document.getElementById('headersContainer');
+                container.innerHTML = `
+                    <div class="header-item">
+                        <input type="text" placeholder="Header名称" class="header-key" value="Content-Type">
+                        <input type="text" placeholder="Header值" class="header-value" value="application/json;charset=UTF-8">
+                        <button class="btn btn-danger btn-small" onclick="removeHeader(this)">删除</button>
+                    </div>
+                `;
+                
+                document.getElementById('resultSection').classList.remove('active');
+            }
+        }
+
+        // 加载示例（不包含敏感信息）
+        function loadExample() {
+            if (confirm('加载示例会覆盖当前输入，确定继续吗？')) {
+                document.getElementById('method').value = 'POST';
+                document.getElementById('url').value = 'https://example.com/api/endpoint';
+                document.getElementById('body').value = JSON.stringify({
+                    "key": "value",
+                    "id": 123
+                }, null, 2);
+                
+                // 设置示例Headers
+                const container = document.getElementById('headersContainer');
+                container.innerHTML = `
+                    <div class="header-item">
+                        <input type="text" placeholder="Header名称" class="header-key" value="Content-Type">
+                        <input type="text" placeholder="Header值" class="header-value" value="application/json;charset=UTF-8">
+                        <button class="btn btn-danger btn-small" onclick="removeHeader(this)">删除</button>
+                    </div>
+                    <div class="header-item">
+                        <input type="text" placeholder="Header名称" class="header-key" value="Authorization">
+                        <input type="text" placeholder="Header值" class="header-value" value="Bearer token">
+                        <button class="btn btn-danger btn-small" onclick="removeHeader(this)">删除</button>
+                    </div>
+                `;
+            }
+        }
+
+        // 解析原始输入文本
+        function parseRawInput() {
+            const rawText = document.getElementById('rawInput').value.trim();
+            
+            if (!rawText) {
+                alert('请先粘贴请求信息');
+                return;
+            }
+
+            try {
+                // 解析请求方法
+                const methodMatch = rawText.match(/(?:发送请求|Request Method|Method|请求方法)[:\s]+(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)/i);
+                if (methodMatch) {
+                    document.getElementById('method').value = methodMatch[1].toUpperCase();
+                }
+
+                // 解析URL
+                const urlMatch = rawText.match(/(?:URL|url|请求地址)[:\s]+(https?:\/\/[^\s\n]+)/i) || 
+                                 rawText.match(/(https?:\/\/[^\s\n]+)/);
+                if (urlMatch) {
+                    document.getElementById('url').value = urlMatch[1].trim();
+                }
+
+                // 解析Headers - 查找Headers部分
+                let headersText = '';
+                const headersSectionMatch = rawText.match(/(?:Headers|请求头|请求头信息)[:\s]*\n([\s\S]*?)(?:\n\n|\nBody|$)/i);
+                
+                if (headersSectionMatch) {
+                    headersText = headersSectionMatch[1];
+                } else {
+                    // 如果没有明确的Headers标记，查找URL和Body之间的内容
+                    const urlEndMatch = rawText.match(/https?:\/\/[^\s\n]+/);
+                    const bodyStartMatch = rawText.match(/(?:Body|请求体)[:\s]*/i);
+                    
+                    if (urlEndMatch && bodyStartMatch) {
+                        const urlEndIndex = urlEndMatch.index + urlEndMatch[0].length;
+                        const bodyStartIndex = bodyStartMatch.index;
+                        if (bodyStartIndex > urlEndIndex) {
+                            headersText = rawText.substring(urlEndIndex, bodyStartIndex);
+                        }
+                    }
+                }
+
+                // 解析Headers行
+                const container = document.getElementById('headersContainer');
+                container.innerHTML = '';
+                
+                const allLines = headersText ? headersText.split('\n') : rawText.split('\n');
+                const headerKeys = new Set(); // 避免重复
+                
+                allLines.forEach(line => {
+                    const trimmed = line.trim();
+                    if (!trimmed) return;
+                    
+                    // 跳过非Header行
+                    if (trimmed.match(/^(account|content|时间|发送请求|URL|Headers|Body|Request Method|Method)/i)) {
+                        return;
+                    }
+                    
+                    // 匹配Header格式: Key: Value 或 Key:Value
+                    const headerMatch = trimmed.match(/^([^:]+?)[:\s]+(.+)$/);
+                    if (headerMatch) {
+                        const key = headerMatch[1].trim();
+                        const value = headerMatch[2].trim();
+                        
+                        // 过滤掉明显不是Header的内容
+                        if (key && value && 
+                            !key.match(/^(account|content|时间|发送请求|URL|Body|https?)/i) &&
+                            !value.match(/^https?:\/\//) &&
+                            !headerKeys.has(key.toLowerCase())) {
+                            
+                            headerKeys.add(key.toLowerCase());
+                            
+                            const item = document.createElement('div');
+                            item.className = 'header-item';
+                            item.innerHTML = `
+                                <input type="text" placeholder="Header名称" class="header-key" value="${escapeHtml(key)}">
+                                <input type="text" placeholder="Header值" class="header-value" value="${escapeHtml(value)}">
+                                <button class="btn btn-danger btn-small" onclick="removeHeader(this)">删除</button>
+                            `;
+                            container.appendChild(item);
+                        }
+                    }
+                });
+                
+                // 如果没有解析到headers，至少保留一个默认的
+                if (container.children.length === 0) {
+                    addHeader();
+                }
+
+                // 解析Body - 支持多种格式
+                let bodyText = '';
+                const bodySectionMatch = rawText.match(/(?:Body|请求体|请求内容)[:\s]*\n?([\s\S]*?)(?:\n\n|$)/i);
+                
+                if (bodySectionMatch) {
+                    bodyText = bodySectionMatch[1].trim();
+                } else {
+                    // 尝试查找JSON对象
+                    const jsonMatch = rawText.match(/(\{[\s\S]*\})/);
+                    if (jsonMatch) {
+                        bodyText = jsonMatch[1].trim();
+                    }
+                }
+                
+                if (bodyText) {
+                    // 尝试格式化JSON
+                    try {
+                        const jsonObj = JSON.parse(bodyText);
+                        document.getElementById('body').value = JSON.stringify(jsonObj, null, 2);
+                    } catch (e) {
+                        // 如果不是有效JSON，直接使用原文本
+                        document.getElementById('body').value = bodyText;
+                    }
+                }
+
+                alert('✓ 解析完成！请检查并调整后生成cURL命令');
+                
+                // 自动滚动到基本信息区域
+                document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+            } catch (error) {
+                console.error('解析错误:', error);
+                alert('解析失败，请检查格式是否正确\n\n支持格式：\n- URL: https://...\n- Headers: Key: Value\n- Body: {...}');
+            }
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 页面卸载时清空敏感数据（额外安全措施）
+        window.addEventListener('beforeunload', function() {
+            // 清空所有输入字段
+            document.getElementById('rawInput').value = '';
+            document.getElementById('url').value = '';
+            document.getElementById('body').value = '';
+            const headers = document.querySelectorAll('.header-key, .header-value');
+            headers.forEach(input => {
+                if (input.value && !input.value.includes('Content-Type') && !input.value.includes('application/json')) {
+                    input.value = '';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

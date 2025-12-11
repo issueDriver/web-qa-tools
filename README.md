@@ -22,6 +22,7 @@ p5/
 │   ├── gantt-chart.html         # 甘特图工具
 │   ├── url-builder.html         # URL拼接工具
 │   ├── text-formatter.html      # 文本格式化工具
+│   ├── curl-generator.html      # cURL命令生成器
 │   └── extension.html           # 扩展工具
 ├── assets/                 # 资源文件目录
 │   └── icons/              # 图标文件
@@ -120,6 +121,14 @@ p5/
 - 支持中文编号格式（1、2、3、）
 - 支持数字编号格式（1. 2. 3.）
 - 一键复制格式化结果
+
+### 15. cURL命令生成器
+- 将HTTP请求转换为cURL命令
+- 支持GET、POST、PUT、DELETE等请求方法
+- 自定义请求头和请求体
+- 自动转义特殊字符
+- 支持复制为Bash脚本
+- 不保存任何敏感信息，确保数据安全
 
 ## 🚀 使用方法
 

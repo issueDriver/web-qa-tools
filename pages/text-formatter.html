@@ -187,12 +187,12 @@
 
         <div class="form-group">
             <label for="inputText">输入内容：</label>
-            <textarea id="inputText" placeholder="请输入要格式化的内容，例如：
-1、Devops生命周期工具
-2、Git仓库管理
-3、WIKI文档管理
-4、Issue跟踪
-5、CI/CD"></textarea>
+            <textarea id="inputText" placeholder="请输入要格式化的内容（每行一个项目），例如：
+Devops生命周期工具
+Git仓库管理
+WIKI文档管理
+Issue跟踪
+CI/CD"></textarea>
         </div>
 
         <button class="btn" onclick="formatText()">格式化输出</button>
@@ -209,40 +209,55 @@
         <div class="example-box">
             <strong>使用示例：</strong><br>
             输入：<br>
-            1、Devops生命周期工具<br>
-            2、Git仓库管理<br>
-            3、WIKI文档管理<br>
-            4、Issue跟踪<br>
-            5、CI/CD<br>
+            Devops生命周期工具<br>
+            Git仓库管理<br>
+            WIKI文档管理<br>
+            Issue跟踪<br>
+            CI/CD<br>
             <br>
             输出：<br>
-            1、Devops生命周期工具2、Git仓库管理3、WIKI文档管理4、Issue跟踪5、CI/CD
+            1、Devops生命周期工具 2、Git仓库管理 3、WIKI文档管理 4、Issue跟踪 5、CI/CD
         </div>
 
         <div class="info-box">
             <strong>功能说明：</strong><br>
-            1. 将多行编号内容转换为单行平铺格式<br>
-            2. 自动去除换行符，保留编号和内容<br>
-            3. 支持中文编号格式（如：1、2、3、）<br>
-            4. 支持数字编号格式（如：1. 2. 3.）<br>
+            1. 自动识别换行，为每行内容添加递增序号<br>
+            2. 序号格式：1、2、3、...（中文顿号分隔）<br>
+            3. 自动过滤空行，只处理有内容的行<br>
+            4. 输出为单行格式，序号和内容无缝连接<br>
             5. 一键复制格式化结果
         </div>
     </div>
 
     <script>
         function formatText() {
-            const inputText = document.getElementById('inputText').value.trim();
+            const inputText = document.getElementById('inputText').value;
             
-            if (!inputText) {
+            if (!inputText || !inputText.trim()) {
                 alert('请输入要格式化的内容');
                 return;
             }
 
-            // 处理文本：去除换行符，保留所有内容
-            let formatted = inputText
-                .replace(/\r\n/g, '')  // Windows换行
-                .replace(/\n/g, '')    // Unix换行
-                .replace(/\r/g, '');    // Mac换行
+            // 按换行符分割文本（支持Windows、Unix、Mac格式）
+            const lines = inputText
+                .split(/\r\n|\r|\n/)  // 支持各种换行符
+                .map(line => line.trim())  // 去除每行首尾空格
+                .filter(line => line.length > 0);  // 过滤空行
+
+            if (lines.length === 0) {
+                alert('请输入有效的内容（至少一行非空内容）');
+                return;
+            }
+
+            // 为每行添加递增序号，格式：1、内容 2、内容 3、内容
+            let formatted = '';
+            lines.forEach((line, index) => {
+                const number = index + 1;
+                if (index > 0) {
+                    formatted += ' ';  // 每个项目之间用空格分隔
+                }
+                formatted += number + '、' + line;
+            });
 
             // 显示结果
             document.getElementById('resultContent').textContent = formatted;

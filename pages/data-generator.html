@@ -183,6 +183,7 @@
                     <option value="phone">手机号</option>
                     <option value="product">商品名称</option>
                     <option value="coupon">优惠券名称</option>
+                    <option value="creditCode">统一社会信用代码</option>
                 </select>
             </div>
 
@@ -212,6 +213,102 @@
         // 液化气名称
         const liquefiedGas = ['液化石油气', 'LPG液化气', '瓶装液化气', '罐装液化气', '工业液化气', '民用液化气', '车用液化气', '液化天然气', 'LNG液化气', '压缩天然气', 'CNG液化气'];
         const couponTypes = ['满减券', '折扣券', '免邮券', '新人券', '生日券', '会员券', '节日券', '限时券', '秒杀券', '团购券', '拼团券', '分享券', '签到券', '积分券', '兑换券', '体验券', '试用券', '专享券', 'VIP券', '升级券'];
+
+        // 统一社会信用代码：区划码（与 test-generator/src/areas.js 前 99 条一致，供第 3–8 位随机选用）
+        const CREDIT_CODE_AREAS = [
+            '110000', '110101', '110102', '110103', '110104', '110105', '110106', '110107', '110108', '110109',
+            '110111', '110112', '110113', '110114', '110115', '110116', '110117', '110228', '110229', '120000',
+            '120101', '120102', '120103', '120104', '120105', '120106', '120107', '120108', '120109', '120110',
+            '120111', '120112', '120113', '120114', '120115', '120221', '120223', '120225', '130000', '130100',
+            '130102', '130103', '130104', '130105', '130107', '130108', '130121', '130123', '130124', '130125',
+            '130126', '130127', '130128', '130129', '130130', '130131', '130132', '130133', '130181', '130182',
+            '130183', '130184', '130185', '130200', '130202', '130203', '130204', '130205', '130207', '130208',
+            '130223', '130224', '130225', '130227', '130229', '130230', '130281', '130283', '130300', '130302',
+            '130303', '130304', '130321', '130322', '130323', '130324', '130400', '130402', '130403', '130404',
+            '130406', '130421', '130423', '130424', '130425', '130426', '130427', '130428', '130429', '130430'
+        ];
+
+        function creditCodeGetMapC(pa) {
+            const map = {
+                '0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
+                'A': 10, 'B': 11, 'C': 12, 'D': 13, 'E': 14, 'F': 15, 'G': 16, 'H': 17, 'J': 18, 'K': 19,
+                'L': 20, 'M': 21, 'N': 22, 'P': 23, 'Q': 24, 'R': 25, 'T': 26, 'U': 27, 'W': 28, 'X': 29, 'Y': 30
+            };
+            return map[pa];
+        }
+
+        function creditCodeGetMapW(pa) {
+            const map = {
+                '1': 1, '2': 3, '3': 9, '4': 27, '5': 19, '6': 26, '7': 16, '8': 17, '9': 20, '10': 29,
+                '11': 25, '12': 13, '13': 8, '14': 24, '15': 10, '16': 30, '17': 28
+            };
+            return map[pa];
+        }
+
+        function creditCodeGetMapR(pa) {
+            const map = {
+                '0': '0', '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
+                '10': 'A', '11': 'B', '12': 'C', '13': 'D', '14': 'E', '15': 'F', '16': 'G', '17': 'H', '18': 'J',
+                '19': 'K', '20': 'L', '21': 'M', '22': 'N', '23': 'P', '24': 'Q', '25': 'R', '26': 'T', '27': 'U',
+                '28': 'W', '29': 'X', '30': 'Y', '31': '0'
+            };
+            return map[pa];
+        }
+
+        /** 校验 18 位统一社会信用代码（与 creditCode.js 算法一致） */
+        function isCreditCode(creditCode) {
+            if (!creditCode || typeof creditCode !== 'string') return false;
+            creditCode = creditCode.toUpperCase().trim();
+            if (creditCode.length !== 18) return false;
+            let sum = 0;
+            for (let i = 0; i < 17; i++) {
+                const a = creditCodeGetMapC(creditCode[i]);
+                const b = creditCodeGetMapW(String(i + 1));
+                if (a === undefined || b === undefined) return false;
+                sum += a * b;
+            }
+            const mod = sum % 31;
+            const res = creditCodeGetMapR(String(31 - mod));
+            if (res === undefined) return false;
+            return creditCode[17] === res;
+        }
+
+        /** 登记管理部门代码：1–9 数字，A–Y 等（生成默认用工商 9） */
+        function getRegOrgCode(num) {
+            const map = {
+                '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
+                '10': 'A', '11': 'B', '12': 'C', '13': 'D', '14': 'E', '15': 'F', '16': 'G', '17': 'Y'
+            };
+            return map[num];
+        }
+
+        /** 生成一条符合校验规则的统一社会信用代码（算法同 creditCode.js / generatorCreditCode） */
+        function generateCreditCode() {
+            const regOrg = getRegOrgCode('9');
+            const orgtype = '1';
+            const area = CREDIT_CODE_AREAS[Math.floor(Math.random() * CREDIT_CODE_AREAS.length)];
+            const num = Math.floor(Math.random() * (99999999 - 10000000 + 1)) + 10000000;
+            const ws = [3, 7, 9, 10, 5, 8, 4, 2];
+            const numStr = String(num);
+            let sumOrg = 0;
+            for (let i = 0; i < 8; i++) {
+                sumOrg += parseInt(numStr.charAt(i), 10) * ws[i];
+            }
+            let c9 = 11 - (sumOrg % 11);
+            if (c9 === 11) c9 = '0';
+            else if (c9 === 10) c9 = 'X';
+            else c9 = String(c9);
+            const orgCode = numStr + c9;
+            const code = regOrg + orgtype + area + orgCode;
+            let sum = 0;
+            for (let i = 0; i < 17; i++) {
+                sum += creditCodeGetMapC(code.charAt(i)) * creditCodeGetMapW(String(i + 1));
+            }
+            let c18 = 31 - (sum % 31);
+            if (c18 === 31) c18 = '0';
+            else c18 = creditCodeGetMapR(String(c18));
+            return code + c18;
+        }
 
         function generateName() {
             const surname = surnames[Math.floor(Math.random() * surnames.length)];
@@ -323,6 +420,12 @@
                     label = '优惠券名称';
                     for (let i = 0; i < count; i++) {
                         data.push(generateCoupon());
+                    }
+                    break;
+                case 'creditCode':
+                    label = '统一社会信用代码';
+                    for (let i = 0; i < count; i++) {
+                        data.push(generateCreditCode());
                     }
                     break;
             }

@@ -38,6 +38,18 @@
             margin-bottom: 10px;
         }
 
+        .feature-desc {
+            margin-top: 12px;
+            padding: 14px 16px;
+            border-radius: 8px;
+            background: #f5f9ff;
+            border: 1px solid #dbe9ff;
+            color: #4a5d7a;
+            font-size: 0.95em;
+            line-height: 1.7;
+            text-align: left;
+        }
+
         .back-link {
             display: inline-block;
             margin-bottom: 20px;
@@ -171,6 +183,10 @@
         <a href="../index.html" class="back-link">← 返回首页</a>
         <div class="header">
             <h1>🎲 测试数据生成器</h1>
+            <div class="feature-desc">
+                支持批量生成常用测试数据：姓名、身份证号、手机号、商品名称、优惠券名称；
+                同时支持统一社会信用代码、组织机构代码、银行卡号等编码类数据生成。
+            </div>
         </div>
 
         <form id="generatorForm">
@@ -184,6 +200,8 @@
                     <option value="product">商品名称</option>
                     <option value="coupon">优惠券名称</option>
                     <option value="creditCode">统一社会信用代码</option>
+                    <option value="orgCode">组织机构代码</option>
+                    <option value="bankAccount">银行卡号</option>
                 </select>
             </div>
 
@@ -310,6 +328,109 @@
             return code + c18;
         }
 
+        // 组织机构代码（GB 11714）：8 位本体码 + 「-」+ 1 位校验码（与 orgCode.js 一致）
+        const ORG_CODE_BODY_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+        function generateOrgCode() {
+            const max = 99999999;
+            const min = 10000000;
+            const num = Math.floor(Math.random() * (max - min + 1)) + min;
+            const ws = [3, 7, 9, 10, 5, 8, 4, 2];
+            const numStr = String(num);
+            let sum = 0;
+            for (let i = 0; i < 8; i++) {
+                sum += parseInt(numStr.charAt(i), 10) * ws[i];
+            }
+            let c9 = 11 - (sum % 11);
+            if (c9 === 11) c9 = '0';
+            else if (c9 === 10) c9 = 'X';
+            else c9 = String(c9);
+            return numStr + '-' + c9;
+        }
+
+        /** 校验「XXXXXXXX-Y」格式（与 orgCode.js / orgCodeValidate 算法一致，不依赖 toastr） */
+        function isOrgCodeValid(value) {
+            if (value == null || String(value).trim() === '') return false;
+            const values = String(value).trim().split('-');
+            const ws = [3, 7, 9, 10, 5, 8, 4, 2];
+            const str = ORG_CODE_BODY_CHARS;
+            const reg = /^([0-9A-Z]){8}$/;
+            const body = (values[0] || '').toUpperCase();
+            if (!reg.test(body)) return false;
+            let sum = 0;
+            for (let i = 0; i < 8; i++) {
+                sum += str.indexOf(body.charAt(i)) * ws[i];
+            }
+            let c9 = 11 - (sum % 11);
+            if (c9 === 11) c9 = '0';
+            else if (c9 === 10) c9 = 'X';
+            else c9 = String(c9);
+            const yc9 = (values[1] != null ? String(values[1]) : '').trim().toUpperCase();
+            return yc9 === c9;
+        }
+
+        // 银行卡号：按 bankaccount.js 规则生成/校验
+        const BANK_ACCOUNT_PREFIXES = ['10', '18', '30', '35', '37', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49', '50', '51', '52', '53', '54', '55', '56', '58', '60', '62', '65', '68', '69', '84', '87', '88', '94', '95', '98', '99'];
+
+        function calcLuhnCheckDigit(firstDigits) {
+            const reversed = [];
+            for (let i = firstDigits.length - 1; i > -1; i--) {
+                reversed.push(firstDigits.charAt(i));
+            }
+            const arrJiShu = [];
+            const arrJiShu2 = [];
+            const arrOuShu = [];
+            for (let j = 0; j < reversed.length; j++) {
+                if ((j + 1) % 2 === 1) {
+                    const doubled = parseInt(reversed[j], 10) * 2;
+                    if (doubled < 9) arrJiShu.push(doubled);
+                    else arrJiShu2.push(doubled);
+                } else {
+                    arrOuShu.push(reversed[j]);
+                }
+            }
+            let sumJiShu = 0;
+            let sumOuShu = 0;
+            let sumJiShuChild1 = 0;
+            let sumJiShuChild2 = 0;
+            for (let m = 0; m < arrJiShu.length; m++) {
+                sumJiShu += parseInt(arrJiShu[m], 10);
+            }
+            for (let n = 0; n < arrOuShu.length; n++) {
+                sumOuShu += parseInt(arrOuShu[n], 10);
+            }
+            for (let p = 0; p < arrJiShu2.length; p++) {
+                sumJiShuChild1 += parseInt(arrJiShu2[p], 10) % 10;
+                sumJiShuChild2 += Math.floor(parseInt(arrJiShu2[p], 10) / 10);
+            }
+            const sumTotal = sumJiShu + sumOuShu + sumJiShuChild1 + sumJiShuChild2;
+            const k = (sumTotal % 10) === 0 ? 10 : (sumTotal % 10);
+            return String(10 - k);
+        }
+
+        function generateBankAccount() {
+            const prefix = BANK_ACCOUNT_PREFIXES[Math.floor(Math.random() * BANK_ACCOUNT_PREFIXES.length)];
+            const max = 999999999999999;
+            const min = 100000000000;
+            const end = Math.floor(Math.random() * (max - min) + min);
+            const firstDigits = prefix + end;
+            const luhm = calcLuhnCheckDigit(firstDigits);
+            return firstDigits + luhm;
+        }
+
+        /** 校验 16-19 位银行卡号（与 bankaccount.js / luhmCheck 规则一致） */
+        function isBankAccountValid(bankno) {
+            if (bankno == null || String(bankno).trim() === '') return false;
+            const account = String(bankno).trim();
+            if (account.length < 16 || account.length > 19) return false;
+            if (!/^\d+$/.test(account)) return false;
+            const prefix = account.substring(0, 2);
+            if (BANK_ACCOUNT_PREFIXES.indexOf(prefix) === -1) return false;
+            const lastNum = account.substr(account.length - 1, 1);
+            const firstDigits = account.substr(0, account.length - 1);
+            return lastNum === calcLuhnCheckDigit(firstDigits);
+        }
+
         function generateName() {
             const surname = surnames[Math.floor(Math.random() * surnames.length)];
             const givenName = givenNames[Math.floor(Math.random() * givenNames.length)];
@@ -426,6 +547,18 @@
                     label = '统一社会信用代码';
                     for (let i = 0; i < count; i++) {
                         data.push(generateCreditCode());
+                    }
+                    break;
+                case 'orgCode':
+                    label = '组织机构代码';
+                    for (let i = 0; i < count; i++) {
+                        data.push(generateOrgCode());
+                    }
+                    break;
+                case 'bankAccount':
+                    label = '银行卡号';
+                    for (let i = 0; i < count; i++) {
+                        data.push(generateBankAccount());
                     }
                     break;
             }
